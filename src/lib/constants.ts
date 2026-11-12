@@ -84,10 +84,7 @@ export const DEFAULT_PRICING_CONFIG: PricingConfig = {
   },
   foundationRate: 140,
   turnkeyRates: {
-    economy: 317,
-    mid: 356,
     standard: 420,
-    luxury_660: 660,
     luxury_680: 680,
   },
 };
@@ -381,26 +378,6 @@ export const TURNKEY_META: Record<
       en: 'None (Shell Stage)',
     },
   },
-  economy: {
-    label: {
-      bg: 'Икономичен (+317 €/m²)',
-      en: 'Economy / Икономичен (+317 €/m²)',
-    },
-    docName: {
-      bg: 'Икономичен',
-      en: 'Economy (Икономичен)',
-    },
-  },
-  mid: {
-    label: {
-      bg: 'Среден клас (+356 €/m²)',
-      en: 'Mid-Range / Среден клас (+356 €/m²)',
-    },
-    docName: {
-      bg: 'Среден клас',
-      en: 'Mid-Range (Среден клас)',
-    },
-  },
   standard: {
     label: {
       bg: 'Стандарт (+420 €/m²)',
@@ -411,24 +388,14 @@ export const TURNKEY_META: Record<
       en: 'Standard (Стандарт)',
     },
   },
-  luxury_660: {
+  luxury_680: {
     label: {
-      bg: 'Луксозен (+660 €/m²)',
-      en: 'Luxury / Луксозен (+660 €/m²)',
+      bg: 'Луксозен (+680 €/m²)',
+      en: 'Luxury / Луксозен (+680 €/m²)',
     },
     docName: {
       bg: 'Луксозен',
       en: 'Luxury (Луксозен)',
-    },
-  },
-  luxury_680: {
-    label: {
-      bg: 'Луксозен Плюс (+680 €/m²)',
-      en: 'Luxury Plus / Луксозен (+680 €/m²)',
-    },
-    docName: {
-      bg: 'Луксозен',
-      en: 'Luxury Plus (Луксозен)',
     },
   },
   custom: {

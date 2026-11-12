@@ -71,18 +71,12 @@ export function getBaseTurnkeyUnitRate(
   switch (form.turnkeyPackage) {
     case 'none':
       return 0;
-    case 'economy':
-      return config.turnkeyRates.economy;
-    case 'mid':
-      return config.turnkeyRates.mid;
     case 'standard':
       return config.turnkeyRates.standard;
-    case 'luxury_660':
-      return config.turnkeyRates.luxury_660;
     case 'luxury_680':
       return config.turnkeyRates.luxury_680;
     case 'custom':
-      return 350;
+      return 420;
   }
 }
 
@@ -135,14 +129,18 @@ export function resolveOptionLabels(form: OfferFormState) {
     .filter(Boolean);
 
   return {
-    systemName: sysMeta.name[lang],
+    systemName: form.systemCustomText?.trim() || sysMeta.name[lang],
     floorsLabel,
-    roofLabel: roofObj.docVal[lang],
+    roofLabel: form.roofCustomText?.trim() || roofObj.docVal[lang],
     winColorLabel: winColorObj.docVal[lang],
-    winFullLabel: `${winColorObj.docVal[lang]} · ${winProfObj.label[lang]} · ${winGlazeObj.label[lang]}`,
-    facadeLabel: facadeObj.docVal[lang],
-    wallHeightLabel: wallHObj.docVal[lang],
-    ceilingLabel: ceilingObj.docVal[lang],
+    winFullLabel:
+      form.winCustomText?.trim() ||
+      `${winColorObj.docVal[lang]} · ${winProfObj.label[lang]} · ${winGlazeObj.label[lang]}`,
+    facadeLabel: form.facadeCustomText?.trim() || facadeObj.docVal[lang],
+    wallHeightLabel:
+      form.wallHeightCustomText?.trim() || wallHObj.docVal[lang],
+    ceilingLabel:
+      form.ceilingCustomText?.trim() || ceilingObj.docVal[lang],
     permitLabel: permitObj.label[lang],
     locationFull: locParts.join(', ') || '—',
   };
@@ -172,7 +170,11 @@ export function buildSpecificationRows(
       },
       {
         element: 'Walls',
-        spec: `${sysMeta.wallSpec.en}. Wall height: ${resolved.wallHeightLabel}. Facade finish: ${resolved.facadeLabel} (texture formed directly in the fibre-cement — no extra cladding costs!).`,
+        spec: `${sysMeta.wallSpec.en}. Wall height: ${resolved.wallHeightLabel}. Facade finish: ${resolved.facadeLabel}${
+          hasTurnkey
+            ? ' (painted and finished under the Turnkey package).'
+            : ' (delivered unpainted at shell stage; painting is included only in Turnkey packages).'
+        }`,
       },
       {
         element: 'Roof',
@@ -212,7 +214,7 @@ export function buildSpecificationRows(
         element: 'Painting',
         spec: hasTurnkey
           ? 'Exterior silicone and interior latex paint — supplied and applied (included in Turnkey package).'
-          : 'Exterior silicone and interior latex paint — supplied as materials (application is part of the finishing works).',
+          : 'Not included in shell stage — wall and facade claddings are delivered unpainted. Exterior and interior painting are included only in Turnkey packages.',
       },
       {
         element: 'Additional options',
@@ -239,7 +241,11 @@ export function buildSpecificationRows(
     },
     {
       element: 'Стени',
-      spec: `${sysMeta.wallSpec.bg}. Височина на стените: ${resolved.wallHeightLabel}. Фасада: ${resolved.facadeLabel} (десенът се формова в самия фиброцимент — без разходи за допълнителна облицовка!).`,
+      spec: `${sysMeta.wallSpec.bg}. Височина на стените: ${resolved.wallHeightLabel}. Фасада: ${resolved.facadeLabel}${
+        hasTurnkey
+          ? ' (боядисани и завършени по пакета „До ключ“).'
+          : ' (доставят се без боядисване на етап „до тапа“; боядисването е включено само в пакетите „До ключ“).'
+      }`,
     },
     {
       element: 'Покрив',
@@ -279,7 +285,7 @@ export function buildSpecificationRows(
       element: 'Боядисване',
       spec: hasTurnkey
         ? 'Външна силиконова и вътрешна латексова боя — доставени и положени (включено в пакета „До ключ“).'
-        : 'Външна силиконова и вътрешна латексова боя — доставени като материал; полагането е част от довършителните работи.',
+        : 'Не е включено в етап „до тапа“ — стенните и фасадните облицовки се доставят без боядисване. Външното и вътрешното боядисване се изпълняват само при избран пакет „До ключ“.',
     },
     {
       element: 'Допълнителни опции',
@@ -363,8 +369,9 @@ export function calculateOffer(
     : [...BASE_INCLUDED_SCOPE[lang]];
 
   const alwaysExcl = ALWAYS_EXCLUDED_ITEMS[lang];
+  // When a Turnkey package is selected, the "Not Included" section is hidden completely.
   const excludedScope = hasTurnkey
-    ? [...alwaysExcl]
+    ? []
     : [
         alwaysExcl[0],
         alwaysExcl[1],
@@ -374,7 +381,7 @@ export function calculateOffer(
         alwaysExcl[4],
       ];
 
-  const turnkeyMeta = TURNKEY_META[form.turnkeyPackage];
+  const turnkeyMeta = TURNKEY_META[form.turnkeyPackage] ?? TURNKEY_META.none;
   const resolvedLabels = resolveOptionLabels(form);
   const specRows = buildSpecificationRows(
     form,

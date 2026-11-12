@@ -978,62 +978,105 @@ export async function generateBulgarianOfferPdf(
       ),
 
       sectionTitle('06', isEn ? 'SCOPE OF THE OFFER' : 'ОБХВАТ НА ОФЕРТАТА'),
-      {
-        table: {
-          headerRows: 1,
-          widths: ['50%', '50%'],
-          body: [
-            [
-              {
-                text: isEn ? '✓ Included in the price' : '✓ Включено в цената',
-                bold: true,
-                fontSize: 9,
-                color: '#ffffff',
-                fillColor: '#15803d',
-              },
-              {
-                text: isEn
-                  ? '• Excluded — customer’s responsibility'
-                  : '• Не включва — за сметка на клиента',
-                bold: true,
-                fontSize: 9,
-                color: '#ffffff',
-                fillColor: '#b91c1c',
-              },
-            ],
-            [
-              {
-                stack: calc.includedScope.map((item) => ({
-                  text: `✓  ${item}`,
-                  fontSize: 8.2,
-                  color: '#14532d',
-                  margin: [0, 2, 0, 2],
-                })),
-                fillColor: '#f0fdf4',
-              },
-              {
-                stack: calc.excludedScope.map((item) => ({
-                  text: `•  ${item}`,
-                  fontSize: 8.2,
-                  color: '#7f1d1d',
-                  margin: [0, 2, 0, 2],
-                })),
-                fillColor: '#fef2f2',
-              },
-            ],
-          ],
-        },
-        layout: {
-          hLineWidth: () => 0.5,
-          vLineWidth: () => 0.5,
-          hLineColor: () => '#cbd5e1',
-          vLineColor: () => '#cbd5e1',
-          paddingLeft: () => 8,
-          paddingRight: () => 8,
-          paddingTop: () => 6,
-          paddingBottom: () => 6,
-        },
-      },
+      calc.hasTurnkey
+        ? {
+            table: {
+              headerRows: 1,
+              widths: ['100%'],
+              body: [
+                [
+                  {
+                    text: isEn
+                      ? '✓ Included in the price (Structure + Turnkey Package)'
+                      : '✓ Включено в цената (Конструкция + Пакет „До ключ“)',
+                    bold: true,
+                    fontSize: 9,
+                    color: '#ffffff',
+                    fillColor: '#15803d',
+                  },
+                ],
+                [
+                  {
+                    stack: calc.includedScope.map((item) => ({
+                      text: `✓  ${item}`,
+                      fontSize: 8.2,
+                      color: '#14532d',
+                      margin: [0, 2, 0, 2],
+                    })),
+                    fillColor: '#f0fdf4',
+                  },
+                ],
+              ],
+            },
+            layout: {
+              hLineWidth: () => 0.5,
+              vLineWidth: () => 0.5,
+              hLineColor: () => '#cbd5e1',
+              vLineColor: () => '#cbd5e1',
+              paddingLeft: () => 8,
+              paddingRight: () => 8,
+              paddingTop: () => 6,
+              paddingBottom: () => 6,
+            },
+          }
+        : {
+            table: {
+              headerRows: 1,
+              widths: ['50%', '50%'],
+              body: [
+                [
+                  {
+                    text: isEn
+                      ? '✓ Included in the price'
+                      : '✓ Включено в цената',
+                    bold: true,
+                    fontSize: 9,
+                    color: '#ffffff',
+                    fillColor: '#15803d',
+                  },
+                  {
+                    text: isEn
+                      ? '• Excluded — customer’s responsibility'
+                      : '• Не включва — за сметка на клиента',
+                    bold: true,
+                    fontSize: 9,
+                    color: '#ffffff',
+                    fillColor: '#b91c1c',
+                  },
+                ],
+                [
+                  {
+                    stack: calc.includedScope.map((item) => ({
+                      text: `✓  ${item}`,
+                      fontSize: 8.2,
+                      color: '#14532d',
+                      margin: [0, 2, 0, 2],
+                    })),
+                    fillColor: '#f0fdf4',
+                  },
+                  {
+                    stack: calc.excludedScope.map((item) => ({
+                      text: `•  ${item}`,
+                      fontSize: 8.2,
+                      color: '#7f1d1d',
+                      margin: [0, 2, 0, 2],
+                    })),
+                    fillColor: '#fef2f2',
+                  },
+                ],
+              ],
+            },
+            layout: {
+              hLineWidth: () => 0.5,
+              vLineWidth: () => 0.5,
+              hLineColor: () => '#cbd5e1',
+              vLineColor: () => '#cbd5e1',
+              paddingLeft: () => 8,
+              paddingRight: () => 8,
+              paddingTop: () => 6,
+              paddingBottom: () => 6,
+            },
+          },
       {
         text: calc.hasTurnkey
           ? isEn

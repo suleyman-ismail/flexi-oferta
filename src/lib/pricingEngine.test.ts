@@ -117,33 +117,37 @@ describe('flexi-home.eu Pricing Engine (BG & EN)', () => {
     expect(result.paymentStages.stage3_10).toBe(7680);
   });
 
-  it('dynamically removes turnkey finishing works from excluded scope in both BG and EN', () => {
+  it('hides excluded scope and updates painting specs when turnkey is selected in both BG and EN', () => {
     const withoutTurnkey = calculateOffer(baseForm, DEFAULT_PRICING_CONFIG);
     expect(withoutTurnkey.excludedScope).toContain('Външна топлоизолация');
     expect(withoutTurnkey.excludedScope).toContain('Замазка на пода');
+    const bgWallsShell = withoutTurnkey.specRows.find(
+      (r) => r.element === 'Стени'
+    );
+    const bgPaintingShell = withoutTurnkey.specRows.find(
+      (r) => r.element === 'Боядисване'
+    );
+    expect(bgWallsShell?.spec).toContain('без боядисване');
+    expect(bgPaintingShell?.spec).toContain('Не е включено');
 
     const withTurnkeyBg = calculateOffer(
-      { ...baseForm, turnkeyPackage: 'mid' },
+      { ...baseForm, turnkeyPackage: 'standard' },
       DEFAULT_PRICING_CONFIG
     );
-    expect(withTurnkeyBg.excludedScope).not.toContain('Външна топлоизолация');
-    expect(withTurnkeyBg.excludedScope).toEqual([
-      'Проектна документация и разрешение за строеж',
-      'Фундамент, изкопни работи и вертикална планировка',
-      'Външни връзки към ел. мрежа, водопровод и канализация',
-      'Подово отопление, слънчеви панели и други допълнителни работи по желание',
-      'Отопление и климатизация',
-    ]);
+    expect(withTurnkeyBg.excludedScope).toEqual([]);
+    const bgPaintingTurnkey = withTurnkeyBg.specRows.find(
+      (r) => r.element === 'Боядисване'
+    );
+    expect(bgPaintingTurnkey?.spec).toContain('включено в пакета');
 
     const withTurnkeyEn = calculateOffer(
-      { ...baseForm, lang: 'en', turnkeyPackage: 'mid' },
+      { ...baseForm, lang: 'en', turnkeyPackage: 'luxury_680' },
       DEFAULT_PRICING_CONFIG
     );
-    expect(withTurnkeyEn.excludedScope).not.toContain(
-      'External thermal insulation'
+    expect(withTurnkeyEn.excludedScope).toEqual([]);
+    const enPaintingTurnkey = withTurnkeyEn.specRows.find(
+      (r) => r.element === 'Painting'
     );
-    expect(withTurnkeyEn.excludedScope).toContain(
-      'Design documentation and building permit'
-    );
+    expect(enPaintingTurnkey?.spec).toContain('included in Turnkey');
   });
 });

@@ -22,10 +22,7 @@ export type FloorCount = 1 | 2;
 
 export type TurnkeyPackageType =
   | 'none'
-  | 'economy'
-  | 'mid'
   | 'standard'
-  | 'luxury_660'
   | 'luxury_680'
   | 'custom';
 
@@ -71,10 +68,7 @@ export interface PricingConfig {
   };
   foundationRate: number; // 140
   turnkeyRates: {
-    economy: number; // 317
-    mid: number; // 356
     standard: number; // 420
-    luxury_660: number; // 660
     luxury_680: number; // 680
   };
 }
@@ -112,6 +106,13 @@ export interface OfferFormState {
   facadeKey: FacadeKey;
   wallHeightKey: WallHeightKey;
   ceilingInsulKey: CeilingInsulKey;
+  // Optional free-text overrides for any technical/architectural field
+  systemCustomText?: string;
+  roofCustomText?: string;
+  winCustomText?: string;
+  facadeCustomText?: string;
+  wallHeightCustomText?: string;
+  ceilingCustomText?: string;
   extraOptionLabel: string;
   extraOptionAmount: number;
   discountEur: number;

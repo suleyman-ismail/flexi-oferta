@@ -438,6 +438,18 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
                 : activeCatalogModel.summaryBg}
             </div>
           )}
+          <input
+            type="text"
+            aria-label={lang === 'bg' ? 'Име / код на модела (по избор)' : 'Custom model name / code (optional)'}
+            value={form.modelCodeLabel}
+            onChange={(e) => onUpdateForm({ modelCodeLabel: e.target.value })}
+            placeholder={
+              lang === 'bg'
+                ? 'Име / код на модела (напр. Е85 или Индивидуален проект)...'
+                : 'Model name / code (e.g. E85 or Custom Project)...'
+            }
+            className="mt-2 w-full px-3 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+          />
         </div>
 
         {/* 4 Structural Systems from Website */}
@@ -476,6 +488,20 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
               </button>
             );
           })}
+        </div>
+        <div className="mb-4">
+          <input
+            type="text"
+            aria-label={lang === 'bg' ? 'Свободен текст за конструктивна система (по избор)' : 'Custom structural system text (optional)'}
+            value={form.systemCustomText ?? ''}
+            onChange={(e) => onUpdateForm({ systemCustomText: e.target.value })}
+            placeholder={
+              lang === 'bg'
+                ? 'Свободен текст за система / конструкция (оставете празно за горния избор)...'
+                : 'Custom structural system text (leave empty to use selection above)...'
+            }
+            className="w-full px-3 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+          />
         </div>
 
         {/* Total RZP Area & 2-Storey Press-Panel Rate Variant */}
@@ -752,7 +778,7 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
                     turnkeyPackage: pkgKey,
                     turnkeyRateOverride:
                       pkgKey === 'custom'
-                        ? form.turnkeyRateOverride ?? 350
+                        ? form.turnkeyRateOverride ?? 420
                         : null,
                   })
                 }
@@ -769,6 +795,20 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
               </button>
             );
           })}
+        </div>
+        <div className="mb-4">
+          <input
+            type="text"
+            aria-label={lang === 'bg' ? 'Свободен текст за конструктивна система (по избор)' : 'Custom structural system text (optional)'}
+            value={form.systemCustomText ?? ''}
+            onChange={(e) => onUpdateForm({ systemCustomText: e.target.value })}
+            placeholder={
+              lang === 'bg'
+                ? 'Свободен текст за система / конструкция (оставете празно за горния избор)...'
+                : 'Custom structural system text (leave empty to use selection above)...'
+            }
+            className="w-full px-3 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+          />
         </div>
 
         {calc.hasTurnkey && (
@@ -860,6 +900,18 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
               );
             })}
           </div>
+          <input
+            type="text"
+            aria-label={lang === 'bg' ? 'Свободен текст за покрив (по избор)' : 'Custom roof text (optional)'}
+            value={form.roofCustomText ?? ''}
+            onChange={(e) => onUpdateForm({ roofCustomText: e.target.value })}
+            placeholder={
+              lang === 'bg'
+                ? 'Свободен текст за покрив (оставете празно за горния избор)...'
+                : 'Custom roof description (leave empty to use selection above)...'
+            }
+            className="mt-2 w-full px-3 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+          />
         </div>
 
         {/* Window Profile (5/6/7-chamber PVC, Aluminium) & Glazing (Double, Triple, Frosted) */}
@@ -911,6 +963,20 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
               ))}
             </select>
           </div>
+          <div className="sm:col-span-2">
+            <input
+              type="text"
+              aria-label={lang === 'bg' ? 'Свободен текст за дограма (по избор)' : 'Custom windows & glazing text (optional)'}
+              value={form.winCustomText ?? ''}
+              onChange={(e) => onUpdateForm({ winCustomText: e.target.value })}
+              placeholder={
+                lang === 'bg'
+                  ? 'Свободен текст за дограма (оставете празно за горния избор)...'
+                  : 'Custom windows & glazing text (leave empty to use selections above)...'
+              }
+              className="w-full px-3 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+            />
+          </div>
         </div>
 
         {/* Roof Colour Swatches (RAL 9005, 3009, 6005, 9002) */}
@@ -944,6 +1010,18 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
               );
             })}
           </div>
+          <input
+            type="text"
+            aria-label={lang === 'bg' ? 'Свободен текст за покрив (по избор)' : 'Custom roof text (optional)'}
+            value={form.roofCustomText ?? ''}
+            onChange={(e) => onUpdateForm({ roofCustomText: e.target.value })}
+            placeholder={
+              lang === 'bg'
+                ? 'Свободен текст за покрив (оставете празно за горния избор)...'
+                : 'Custom roof description (leave empty to use selection above)...'
+            }
+            className="mt-2 w-full px-3 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+          />
         </div>
 
         {/* Facade, Wall Height & Ceiling Insulation */}
@@ -970,6 +1048,18 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
                 </option>
               ))}
             </select>
+            <input
+              type="text"
+              aria-label={lang === 'bg' ? 'Свободен текст за фасада (по избор)' : 'Custom facade text (optional)'}
+              value={form.facadeCustomText ?? ''}
+              onChange={(e) => onUpdateForm({ facadeCustomText: e.target.value })}
+              placeholder={
+                lang === 'bg'
+                  ? 'Свободен текст за фасада (оставете празно за горния избор)...'
+                  : 'Custom facade text (leave empty to use selection above)...'
+              }
+              className="mt-1.5 w-full px-3 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+            />
           </div>
 
           <div>
@@ -994,6 +1084,20 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
                 </option>
               ))}
             </select>
+            <input
+              type="text"
+              aria-label={lang === 'bg' ? 'Свободен текст за височина на стените (по избор)' : 'Custom wall height text (optional)'}
+              value={form.wallHeightCustomText ?? ''}
+              onChange={(e) =>
+                onUpdateForm({ wallHeightCustomText: e.target.value })
+              }
+              placeholder={
+                lang === 'bg'
+                  ? 'Свободен текст за височина (по избор)...'
+                  : 'Custom wall height (optional)...'
+              }
+              className="mt-1.5 w-full px-3 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+            />
           </div>
 
           <div className="sm:col-span-2">
@@ -1020,6 +1124,20 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
                 </option>
               ))}
             </select>
+            <input
+              type="text"
+              aria-label={lang === 'bg' ? 'Свободен текст за изолация на таван (по избор)' : 'Custom ceiling insulation text (optional)'}
+              value={form.ceilingCustomText ?? ''}
+              onChange={(e) =>
+                onUpdateForm({ ceilingCustomText: e.target.value })
+              }
+              placeholder={
+                lang === 'bg'
+                  ? 'Свободен текст за таван / изолация (оставете празно за горния избор)...'
+                  : 'Custom ceiling insulation (leave empty to use selection above)...'
+              }
+              className="mt-1.5 w-full px-3 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+            />
           </div>
         </div>
 

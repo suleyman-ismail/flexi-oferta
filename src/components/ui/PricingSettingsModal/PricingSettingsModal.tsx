@@ -345,14 +345,11 @@ export function PricingSettingsModal({
                 ? '5. Пакети „До ключ“ (отделна позиция — €/m²)'
                 : '5. Turnkey Finishing Packages (separate add-on — €/m²)'}
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {(
                 [
-                  ['economy', 'Икономичен / Economy'],
-                  ['mid', 'Среден клас / Medium'],
-                  ['standard', 'Стандарт / Standard'],
-                  ['luxury_660', 'Луксозен 660'],
-                  ['luxury_680', 'Луксозен+ 680'],
+                  ['standard', 'Стандарт / Standard (420 €/m²)'],
+                  ['luxury_680', 'Луксозен / Luxury (680 €/m²)'],
                 ] as const
               ).map(([key, label]) => (
                 <div key={key}>

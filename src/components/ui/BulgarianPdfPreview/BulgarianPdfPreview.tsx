@@ -1020,7 +1020,11 @@ export function BulgarianPdfPreview({ form, calc }: BulgarianPdfPreviewProps) {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div
+                    className={`grid grid-cols-1 ${
+                      calc.hasTurnkey ? '' : 'sm:grid-cols-2'
+                    } gap-3`}
+                  >
                     {/* Left Column: Included */}
                     <div className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-3">
                       <div className="flex items-center gap-1.5 font-extrabold text-xs text-emerald-950 pb-2 mb-2 border-b border-emerald-200">
@@ -1041,25 +1045,27 @@ export function BulgarianPdfPreview({ form, calc }: BulgarianPdfPreviewProps) {
                       </ul>
                     </div>
 
-                    {/* Right Column: Excluded */}
-                    <div className="rounded-lg border border-rose-200 bg-rose-50/40 p-3">
-                      <div className="flex items-center gap-1.5 font-extrabold text-xs text-rose-950 pb-2 mb-2 border-b border-rose-200">
-                        <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                        {lang === 'bg'
-                          ? 'Не включва — за сметка на клиента'
-                          : "Not Included — Client's Expense"}
+                    {/* Right Column: Excluded (Hidden when a Turnkey package is active) */}
+                    {!calc.hasTurnkey && (
+                      <div className="rounded-lg border border-rose-200 bg-rose-50/40 p-3">
+                        <div className="flex items-center gap-1.5 font-extrabold text-xs text-rose-950 pb-2 mb-2 border-b border-rose-200">
+                          <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                          {lang === 'bg'
+                            ? 'Не включва — за сметка на клиента'
+                            : "Not Included — Client's Expense"}
+                        </div>
+                        <ul className="space-y-1.5 text-[11px] text-zinc-800">
+                          {calc.excludedScope.map((item) => (
+                            <li key={item} className="flex items-start gap-1.5">
+                              <span className="text-rose-600 font-bold mt-0.5">
+                                ✕
+                              </span>
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-                      <ul className="space-y-1.5 text-[11px] text-zinc-800">
-                        {calc.excludedScope.map((item) => (
-                          <li key={item} className="flex items-start gap-1.5">
-                            <span className="text-rose-600 font-bold mt-0.5">
-                              ✕
-                            </span>
-                            <span>{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                    )}
                   </div>
                 </div>
 
