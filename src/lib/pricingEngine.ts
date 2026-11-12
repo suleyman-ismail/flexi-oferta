@@ -146,6 +146,56 @@ export function resolveOptionLabels(form: OfferFormState) {
   };
 }
 
+export function getDefaultWallThicknessCm(system: OfferFormState['system']): {
+  ext: number;
+  int: number;
+} {
+  return system === 'press_standard' || system === 'press_economy'
+    ? { ext: 16, int: 10 }
+    : { ext: 14, int: 8 };
+}
+
+function buildDynamicWallSpec(
+  form: OfferFormState,
+  lang: 'bg' | 'en'
+): string {
+  const defaults = getDefaultWallThicknessCm(form.system);
+  const extCm =
+    form.extWallCm && form.extWallCm > 0 ? form.extWallCm : defaults.ext;
+  const intCm =
+    form.intWallCm && form.intWallCm > 0 ? form.intWallCm : defaults.int;
+  const extMm = Math.round(extCm * 10);
+  const intMm = Math.round(intCm * 10);
+
+  if (lang === 'en') {
+    if (form.system === 'press_standard') {
+      const extCore = extMm > 20 ? ` (10 mm fibre-cement + ${extMm - 20} mm EPS + 10 mm fibre-cement)` : '';
+      const intCore = intMm > 20 ? ` (10 mm fibre-cement + ${intMm - 20} mm EPS + 10 mm fibre-cement)` : '';
+      return `Double-faced fibre-cement panels + EPS insulation — External walls: ${extCm} cm (${extMm} mm)${extCore}; Internal walls: ${intCm} cm (${intMm} mm)${intCore}`;
+    }
+    if (form.system === 'press_economy') {
+      return `Economy series double-faced fibre-cement panels with EPS insulation — External walls: ${extCm} cm (${extMm} mm); Internal partition walls: ${intCm} cm (${intMm} mm)`;
+    }
+    if (form.system === 'steel_frame') {
+      return `Steel frame structure with double-faced fibre-cement panels and rock wool — External wall thickness: ${extCm} cm; Internal wall thickness: ${intCm} cm`;
+    }
+    return `Reinforced galvanised steel structure, thermally & acoustically insulated with rock wool (fibre-cement exterior, plasterboard interior) — External walls: ${extCm} cm; Internal walls: ${intCm} cm`;
+  }
+
+  if (form.system === 'press_standard') {
+    const extCore = extMm > 20 ? ` (10 мм фиброцимент + ${extMm - 20} мм EPS + 10 мм фиброцимент)` : '';
+    const intCore = intMm > 20 ? ` (10 мм фиброцимент + ${intMm - 20} мм EPS + 10 мм фиброцимент)` : '';
+    return `Двулицеви фиброциментови панели + EPS изолация — Външни стени: ${extCm} см (${extMm} мм)${extCore}; Преградни стени: ${intCm} см (${intMm} мм)${intCore}`;
+  }
+  if (form.system === 'press_economy') {
+    return `Икономична серия двулицеви фиброциментови панели с EPS изолация — Външни стени: ${extCm} см (${extMm} мм); Вътрешни преградни стени: ${intCm} см (${intMm} мм)`;
+  }
+  if (form.system === 'steel_frame') {
+    return `Стоманена каркасна конструкция с двулицеви фиброциментови панели и каменна вата — Дебелина на външните стени: ${extCm} см; Дебелина на вътрешните стени: ${intCm} см`;
+  }
+  return `Усилена поцинкована метална конструкция, топло- и шумоизолирана с каменна вата (отвън фиброциментови плоскости, отвътре гипсокартон) — Външни стени: ${extCm} см; Вътрешни стени: ${intCm} см`;
+}
+
 export function buildSpecificationRows(
   form: OfferFormState,
   foundationUnitRate: number,
@@ -154,23 +204,31 @@ export function buildSpecificationRows(
   resolved: ReturnType<typeof resolveOptionLabels>
 ): Array<{ element: string; spec: string }> {
   const lang = form.lang || 'bg';
-  const sysMeta = SYSTEM_META[form.system];
   const isPress =
     form.system === 'press_standard' || form.system === 'press_economy';
+  const wallSpec = buildDynamicWallSpec(form, lang);
+  const hasCustomRoof = Boolean(form.roofCustomText?.trim());
+  const hasCustomWin = Boolean(form.winCustomText?.trim());
+
+  const applyOverrides = (rows: Array<{ element: string; spec: string }>) =>
+    rows.map((row, idx) => {
+      const custom = form.specOverrides?.[String(idx)]?.trim();
+      return custom ? { ...row, spec: custom } : row;
+    });
 
   if (lang === 'en') {
     const termEn = isPress
       ? 'Production ~3 weeks from advance payment and 5–10 days of on-site assembly (30–40 days after approved designs and building permit). Full assistance with project documentation.'
       : 'After approved projects and building permit — 30–40 days to completed assembly. We provide full assistance with preparing the documentation.';
 
-    return [
+    return applyOverrides([
       {
         element: 'Construction & foundation',
         spec: `Built on a reinforced concrete strip or pad foundation, as well as a metal structure with galvanised elements and ground-anchor screws. Indicative average foundation price: ~${foundationUnitRate} €/m² (exact price confirmed after a site visit and geodetic survey of the plot).`,
       },
       {
         element: 'Walls',
-        spec: `${sysMeta.wallSpec.en}. Wall height: ${resolved.wallHeightLabel}. Facade finish: ${resolved.facadeLabel}${
+        spec: `${wallSpec}. Wall height: ${resolved.wallHeightLabel}. Facade finish: ${resolved.facadeLabel}${
           hasTurnkey
             ? ' (painted and finished under the Turnkey package).'
             : ' (delivered unpainted at shell stage; painting is included only in Turnkey packages).'
@@ -178,7 +236,9 @@ export function buildSpecificationRows(
       },
       {
         element: 'Roof',
-        spec: `Galvanised steel trusses, OSB boards with vapour membrane, metal roof tiles (Colour: ${resolved.roofLabel}) and complete metal gutter system.`,
+        spec: hasCustomRoof
+          ? resolved.roofLabel
+          : `Galvanised steel trusses, OSB boards with vapour membrane, metal roof tiles (Colour: ${resolved.roofLabel}) and complete metal gutter system.`,
       },
       {
         element: 'Ceiling',
@@ -190,7 +250,9 @@ export function buildSpecificationRows(
       },
       {
         element: 'Windows',
-        spec: `${resolved.winFullLabel}. Opening: turn-and-tilt (standard). Standard sizes: 60/40, 120/60, 120/100, 120/160, 160/160, 180/180 cm (custom sizes and frosted glass available per project).`,
+        spec: hasCustomWin
+          ? resolved.winFullLabel
+          : `${resolved.winFullLabel}. Opening: turn-and-tilt (standard). Standard sizes: 60/40, 120/60, 120/100, 120/160, 160/160, 180/180 cm (custom sizes and frosted glass available per project).`,
       },
       {
         element: 'Electrical installation',
@@ -226,7 +288,7 @@ export function buildSpecificationRows(
         element: 'Delivery & assembly time',
         spec: termEn,
       },
-    ];
+    ]);
   }
 
   // Bulgarian ('bg')
@@ -234,14 +296,14 @@ export function buildSpecificationRows(
     ? 'Производство ~3 седмици от авансовото плащане и 5–10 дни монтаж на място (30–40 дни след одобрени проекти и разрешение за строеж). Оказваме пълно съдействие при подготовката на документацията.'
     : 'След одобрени проекти и разрешение за строеж — 30–40 дни до завършен монтаж. Оказваме пълно съдействие при подготовката на документацията.';
 
-  return [
+  return applyOverrides([
     {
       element: 'Конструкция и основа',
       spec: `Изгражда се върху бетонова, ивична или стъпкова основа, както и метална конструкция с поцинковани елементи и земно-анкерни винтове. Ориентировъчна средна цена на фундамента: ~${foundationUnitRate} €/м² (точната цена се определя след оглед и геодезично заснемане на терена).`,
     },
     {
       element: 'Стени',
-      spec: `${sysMeta.wallSpec.bg}. Височина на стените: ${resolved.wallHeightLabel}. Фасада: ${resolved.facadeLabel}${
+      spec: `${wallSpec}. Височина на стените: ${resolved.wallHeightLabel}. Фасада: ${resolved.facadeLabel}${
         hasTurnkey
           ? ' (боядисани и завършени по пакета „До ключ“).'
           : ' (доставят се без боядисване на етап „до тапа“; боядисването е включено само в пакетите „До ключ“).'
@@ -249,7 +311,9 @@ export function buildSpecificationRows(
     },
     {
       element: 'Покрив',
-      spec: `Метални ферми от поцинкована стомана, OSB плоскости с паромембрана, метални керемиди (Цвят: ${resolved.roofLabel}) и метални улуци.`,
+      spec: hasCustomRoof
+        ? resolved.roofLabel
+        : `Метални ферми от поцинкована стомана, OSB плоскости с паромембрана, метални керемиди (Цвят: ${resolved.roofLabel}) и метални улуци.`,
     },
     {
       element: 'Таван',
@@ -261,7 +325,9 @@ export function buildSpecificationRows(
     },
     {
       element: 'Прозорци',
-      spec: `${resolved.winFullLabel}. Отваряне: двойно и ножично (стандарт). Стандартни размери: 60/40, 120/60, 120/100, 120/160, 160/160, 180/180 см (възможни са и индивидуални размери и матирано стъкло по проект).`,
+      spec: hasCustomWin
+        ? resolved.winFullLabel
+        : `${resolved.winFullLabel}. Отваряне: двойно и ножично (стандарт). Стандартни размери: 60/40, 120/60, 120/100, 120/160, 160/160, 180/180 см (възможни са и индивидуални размери и матирано стъкло по проект).`,
     },
     {
       element: 'Електрическа инсталация',
@@ -297,7 +363,7 @@ export function buildSpecificationRows(
       element: 'Срок за изпълнение',
       spec: termBg,
     },
-  ];
+  ]);
 }
 
 export function calculateOffer(

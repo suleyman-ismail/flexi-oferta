@@ -38,6 +38,7 @@ import {
   generateOfferNumber,
   getBaseStructureUnitRate,
   getBaseTurnkeyUnitRate,
+  getDefaultWallThicknessCm,
 } from '@/lib/pricingEngine';
 import {
   CalculatedOffer,
@@ -1113,7 +1114,133 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
               className="mt-1.5 w-full px-3 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
             />
           </div>
+
+          {/* Custom Wall Thicknesses (cm) — dynamically updates the technical spec below */}
+          <div>
+            <label
+              htmlFor="extWallCm"
+              className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1"
+            >
+              {lang === 'bg'
+                ? 'Дебелина външни стени (см)'
+                : 'External wall thickness (cm)'}
+            </label>
+            <input
+              id="extWallCm"
+              type="number"
+              min={1}
+              max={100}
+              aria-label={
+                lang === 'bg'
+                  ? 'Дебелина външни стени (см)'
+                  : 'External wall thickness (cm)'
+              }
+              value={
+                form.extWallCm ?? getDefaultWallThicknessCm(form.system).ext
+              }
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                onUpdateForm({ extWallCm: v > 0 ? v : undefined });
+              }}
+              className="w-full px-3 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="intWallCm"
+              className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1"
+            >
+              {lang === 'bg'
+                ? 'Дебелина вътрешни стени (см)'
+                : 'Internal wall thickness (cm)'}
+            </label>
+            <input
+              id="intWallCm"
+              type="number"
+              min={1}
+              max={100}
+              aria-label={
+                lang === 'bg'
+                  ? 'Дебелина вътрешни стени (см)'
+                  : 'Internal wall thickness (cm)'
+              }
+              value={
+                form.intWallCm ?? getDefaultWallThicknessCm(form.system).int
+              }
+              onChange={(e) => {
+                const v = Number(e.target.value);
+                onUpdateForm({ intWallCm: v > 0 ? v : undefined });
+              }}
+              className="w-full px-3 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+            />
+          </div>
         </div>
+
+        {/* Collapsible full override editor for every row in the bottom technical specification table */}
+        <details className="mb-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/50 p-3">
+          <summary className="cursor-pointer text-xs font-semibold text-indigo-700 dark:text-indigo-300 select-none flex items-center justify-between">
+            <span>
+              {lang === 'bg'
+                ? 'Детайлна техническа спецификация — ръчна редакция на всички редове (по избор)'
+                : 'Detailed Technical Specification — edit any description row (optional)'}
+            </span>
+            {form.specOverrides &&
+              Object.values(form.specOverrides).some((v) => v?.trim()) && (
+                <span className="ms-2 px-2 py-0.5 rounded-full text-[10px] bg-amber-100 text-amber-900 font-bold">
+                  {lang === 'bg' ? 'Редактирано' : 'Customised'}
+                </span>
+              )}
+          </summary>
+          <div className="mt-3 space-y-2.5">
+            {calc.specRows.map((row, idx) => {
+              const key = String(idx);
+              const customVal = form.specOverrides?.[key] ?? '';
+              return (
+                <div key={row.element} className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <label
+                      htmlFor={`specOverride-${key}`}
+                      className="text-[11px] font-semibold text-zinc-700 dark:text-zinc-300"
+                    >
+                      {row.element}
+                    </label>
+                    {customVal.trim() !== '' && (
+                      <button
+                        type="button"
+                        aria-label={`Reset ${row.element}`}
+                        onClick={() => {
+                          const next = { ...(form.specOverrides ?? {}) };
+                          delete next[key];
+                          onUpdateForm({ specOverrides: next });
+                        }}
+                        className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 hover:underline"
+                      >
+                        {lang === 'bg' ? 'Върни стандартното' : 'Reset'}
+                      </button>
+                    )}
+                  </div>
+                  <textarea
+                    id={`specOverride-${key}`}
+                    rows={2}
+                    aria-label={row.element}
+                    value={customVal}
+                    onChange={(e) =>
+                      onUpdateForm({
+                        specOverrides: {
+                          ...(form.specOverrides ?? {}),
+                          [key]: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder={row.spec}
+                    className="w-full px-2.5 py-1.5 text-xs rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </details>
 
         {/* Extra Option, Discount & Notes */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-zinc-100 dark:border-zinc-800">

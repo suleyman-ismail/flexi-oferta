@@ -150,4 +150,29 @@ describe('flexi-home.eu Pricing Engine (BG & EN)', () => {
     );
     expect(enPaintingTurnkey?.spec).toContain('included in Turnkey');
   });
+
+  it('dynamically updates wall thickness, custom roof/window text, and specOverrides in specRows', () => {
+    const customWalls = calculateOffer(
+      {
+        ...baseForm,
+        extWallCm: 10,
+        intWallCm: 8,
+        roofCustomText: 'Плосък покрив с термопанел 10 см',
+        winCustomText: 'Алуминиева дограма антрацит, троен стъклопакет',
+        specOverrides: { '4': 'Персонализирани врати от масивен дъб' },
+      },
+      DEFAULT_PRICING_CONFIG
+    );
+    const wallsRow = customWalls.specRows.find((r) => r.element === 'Стени');
+    const roofRow = customWalls.specRows.find((r) => r.element === 'Покрив');
+    const winRow = customWalls.specRows.find((r) => r.element === 'Прозорци');
+    const doorsRow = customWalls.specRows.find((r) => r.element === 'Врати');
+
+    expect(wallsRow?.spec).toContain('10 см (100 мм)');
+    expect(wallsRow?.spec).toContain('8 см (80 мм)');
+    expect(wallsRow?.spec).not.toContain('160 мм');
+    expect(roofRow?.spec).toBe('Плосък покрив с термопанел 10 см');
+    expect(winRow?.spec).toBe('Алуминиева дограма антрацит, троен стъклопакет');
+    expect(doorsRow?.spec).toBe('Персонализирани врати от масивен дъб');
+  });
 });

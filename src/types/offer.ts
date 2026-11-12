@@ -106,6 +106,9 @@ export interface OfferFormState {
   facadeKey: FacadeKey;
   wallHeightKey: WallHeightKey;
   ceilingInsulKey: CeilingInsulKey;
+  // Custom wall thicknesses (cm) — defaults to 16/10 (press) or 14/8 (steel/metal)
+  extWallCm?: number;
+  intWallCm?: number;
   // Optional free-text overrides for any technical/architectural field
   systemCustomText?: string;
   roofCustomText?: string;
@@ -113,6 +116,8 @@ export interface OfferFormState {
   facadeCustomText?: string;
   wallHeightCustomText?: string;
   ceilingCustomText?: string;
+  // Optional manual overrides for any row (index '0'..'11') in the detailed specification table
+  specOverrides?: Record<string, string>;
   extraOptionLabel: string;
   extraOptionAmount: number;
   discountEur: number;
