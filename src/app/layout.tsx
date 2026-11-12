@@ -1,5 +1,13 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
+
+const inter = Inter({
+  subsets: ['latin', 'cyrillic'],
+  weight: ['500', '600', '700', '800'],
+  variable: '--font-inter',
+  display: 'swap',
+});
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
@@ -42,8 +50,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="bg" suppressHydrationWarning>
-      <body className="antialiased selection:bg-indigo-600 selection:text-white">
+    <html lang="bg" className={inter.variable} suppressHydrationWarning>
+      <body className="font-sans font-medium antialiased selection:bg-indigo-600 selection:text-white">
         {children}
       </body>
     </html>

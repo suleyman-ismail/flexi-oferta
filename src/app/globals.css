@@ -4,6 +4,16 @@
 
 @layer base {
   body {
-    @apply bg-zinc-100 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 antialiased;
+    @apply bg-zinc-100 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100 font-medium antialiased;
+  }
+
+  label {
+    @apply font-semibold text-zinc-800 dark:text-zinc-200;
+  }
+
+  input,
+  select,
+  textarea {
+    @apply font-medium text-zinc-900 dark:text-zinc-100;
   }
 }
