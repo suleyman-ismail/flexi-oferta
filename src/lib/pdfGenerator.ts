@@ -792,6 +792,30 @@ export async function generateBulgarianOfferPdf(
                     color: '#475569',
                     margin: [0, 2, 0, 0],
                   },
+                  ...(calc.hasTurnkey
+                    ? [
+                        {
+                          text: isEn
+                            ? `* The selected Turnkey Package (${formatEur(calc.turnkeyTotal)}) is paid on a separate schedule aligned with finishing milestones.`
+                            : `* Избраният пакет „До ключ“ (${formatEur(calc.turnkeyTotal)}) се заплаща по отделен график съгласно етапите на довършителните работи.`,
+                          fontSize: 8,
+                          color: '#065f46',
+                          margin: [0, 2, 0, 0],
+                        },
+                      ]
+                    : []),
+                  ...(form.includeFoundation
+                    ? [
+                        {
+                          text: isEn
+                            ? `* The Foundation (${formatEur(calc.foundationTotal)}) is billed separately upon base execution.`
+                            : `* Фундаментът (${formatEur(calc.foundationTotal)}) се заплаща отделно при изпълнение на основата.`,
+                          fontSize: 8,
+                          color: '#92400e',
+                          margin: [0, 2, 0, 0],
+                        },
+                      ]
+                    : []),
                 ],
                 fillColor: '#eef2ff',
                 margin: [8, 6, 8, 6],

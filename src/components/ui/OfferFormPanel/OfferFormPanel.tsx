@@ -10,12 +10,14 @@ import {
   Home,
   Layers,
   MapPin,
+  MessageCircle,
   PackagePlus,
   Paintbrush,
   Phone,
   RefreshCw,
   RotateCcw,
   Ruler,
+  Send,
   Sparkles,
   User,
 } from 'lucide-react';
@@ -40,6 +42,12 @@ import {
   getBaseTurnkeyUnitRate,
   getDefaultWallThicknessCm,
 } from '@/lib/pricingEngine';
+import {
+  buildOfferShareMessage,
+  buildViberUrl,
+  buildWhatsAppUrl,
+  normalizePhoneForMessenger,
+} from '@/lib/shareLinks';
 import {
   CalculatedOffer,
   CeilingInsulKey,
@@ -150,6 +158,55 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
                 className="w-full ps-8 pe-3 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
               />
             </div>
+            {(() => {
+              const shareMsg = buildOfferShareMessage(form, calc);
+              const waUrl = buildWhatsAppUrl(form.clientPhone, shareMsg);
+              const viberUrl = buildViberUrl(form.clientPhone, shareMsg);
+              const normalized = normalizePhoneForMessenger(form.clientPhone);
+              return (
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                  <a
+                    href={waUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={
+                      lang === 'bg'
+                        ? 'Изпрати оферта по WhatsApp'
+                        : 'Send offer via WhatsApp'
+                    }
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors shadow-sm"
+                  >
+                    <MessageCircle className="w-3 h-3" />
+                    WhatsApp
+                  </a>
+                  <a
+                    href={viberUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={
+                      lang === 'bg'
+                        ? 'Изпрати оферта по Viber'
+                        : 'Send offer via Viber'
+                    }
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-purple-600 hover:bg-purple-700 text-white transition-colors shadow-sm"
+                  >
+                    <Send className="w-3 h-3" />
+                    Viber
+                  </a>
+                  {normalized ? (
+                    <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400">
+                      +{normalized}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-zinc-500 dark:text-zinc-400">
+                      {lang === 'bg'
+                        ? 'Въведете телефон за директен чат'
+                        : 'Enter phone for direct chat'}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           <div>

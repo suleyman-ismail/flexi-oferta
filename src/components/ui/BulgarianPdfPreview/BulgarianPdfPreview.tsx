@@ -720,6 +720,18 @@ export function BulgarianPdfPreview({ form, calc }: BulgarianPdfPreviewProps) {
                             )}) is paid according to a separate schedule aligned with finishing work milestones.`}
                       </p>
                     )}
+                    {form.includeFoundation && (
+                      <p className="text-[11px] text-amber-800 font-medium">
+                        *{' '}
+                        {lang === 'bg'
+                          ? `Фундаментът (${formatEur(
+                              calc.foundationTotal
+                            )}) се заплаща отделно при изпълнение на основата.`
+                          : `The Foundation (${formatEur(
+                              calc.foundationTotal
+                            )}) is billed separately upon base execution.`}
+                      </p>
+                    )}
                   </div>
                 </div>
 

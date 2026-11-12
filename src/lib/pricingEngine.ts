@@ -1,6 +1,5 @@
 import {
   ALWAYS_EXCLUDED_ITEMS,
-  BASE_INCLUDED_SCOPE,
   CEILING_INSUL_OPTIONS,
   FACADE_OPTIONS,
   PERMIT_STATUS_OPTIONS,
@@ -427,12 +426,57 @@ export function calculateOffer(
   const tkSuffix =
     lang === 'en' ? '(incl. in Turnkey package)' : '(вкл. в пакет „До ключ“)';
 
+  const turnkeyMeta = TURNKEY_META[form.turnkeyPackage] ?? TURNKEY_META.none;
+  const resolvedLabels = resolveOptionLabels(form);
+  const wallDefaults = getDefaultWallThicknessCm(form.system);
+  const extCm =
+    form.extWallCm && form.extWallCm > 0 ? form.extWallCm : wallDefaults.ext;
+  const intCm =
+    form.intWallCm && form.intWallCm > 0 ? form.intWallCm : wallDefaults.int;
+
+  const dynamicBaseScope =
+    lang === 'en'
+      ? [
+          'Factory manufacturing of the structure',
+          'Delivery to the customer’s plot',
+          'On-site assembly by Flexi Home team',
+          `Wall system (${extCm} cm external / ${intCm} cm internal)`,
+          form.roofCustomText?.trim()
+            ? `Roof: ${resolvedLabels.roofLabel}`
+            : `Roof system with galvanised trusses, OSB, vapour membrane, metal tiles (${resolvedLabels.roofLabel}) and gutters`,
+          `Ceiling: ${resolvedLabels.ceilingLabel}`,
+          `Windows & glazing: ${resolvedLabels.winFullLabel}`,
+          'Armoured metal entrance door and interior MDF doors with wooden frame',
+          'Electrical installation (concealed wiring and breaker panel)',
+          'Plumbing installation (completed to shell stage)',
+          ...(form.includeFoundation
+            ? [`Foundation per project (${effectiveFoundationArea} m²)`]
+            : []),
+        ]
+      : [
+          'Производство на конструкцията във фабрика',
+          'Доставка до парцела на клиента',
+          'Монтаж на място от специализиран екип',
+          `Стенна система (${extCm} см външни / ${intCm} см вътрешни стени)`,
+          form.roofCustomText?.trim()
+            ? `Покрив: ${resolvedLabels.roofLabel}`
+            : `Покривна система с метални ферми, OSB, паромембрана, метални керемиди (${resolvedLabels.roofLabel}) и улуци`,
+          `Таван: ${resolvedLabels.ceilingLabel}`,
+          `Дограма и стъклопакет: ${resolvedLabels.winFullLabel}`,
+          'Външна блиндирана метална и вътрешни MDF врати с дървена каса',
+          'Електрическа инсталация (скрит монтаж и ел. табло)',
+          'ВиК инсталация (напълно монтирана до тапа)',
+          ...(form.includeFoundation
+            ? [`Фундамент по проект (${effectiveFoundationArea} м²)`]
+            : []),
+        ];
+
   const includedScope = hasTurnkey
     ? [
-        ...BASE_INCLUDED_SCOPE[lang],
+        ...dynamicBaseScope,
         ...TURNKEY_FINISHING_ITEMS[lang].map((item) => `${item} ${tkSuffix}`),
       ]
-    : [...BASE_INCLUDED_SCOPE[lang]];
+    : dynamicBaseScope;
 
   const alwaysExcl = ALWAYS_EXCLUDED_ITEMS[lang];
   // When a Turnkey package is selected, the "Not Included" section is hidden completely.
@@ -440,15 +484,13 @@ export function calculateOffer(
     ? []
     : [
         alwaysExcl[0],
-        alwaysExcl[1],
+        ...(form.includeFoundation ? [] : [alwaysExcl[1]]),
         ...TURNKEY_FINISHING_ITEMS[lang],
         alwaysExcl[3],
         alwaysExcl[2],
         alwaysExcl[4],
       ];
 
-  const turnkeyMeta = TURNKEY_META[form.turnkeyPackage] ?? TURNKEY_META.none;
-  const resolvedLabels = resolveOptionLabels(form);
   const specRows = buildSpecificationRows(
     form,
     foundationUnitRate,
