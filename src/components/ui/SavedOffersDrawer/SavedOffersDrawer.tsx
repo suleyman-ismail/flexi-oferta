@@ -189,8 +189,8 @@ export function SavedOffersDrawer({
             </div>
           ) : (
             savedOffers.map((item) => {
-              const sys = SYSTEM_META[item.form.system];
-              const tk = TURNKEY_META[item.form.turnkeyPackage];
+              const sys = SYSTEM_META[item.form.system] ?? SYSTEM_META.press_standard;
+              const tk = TURNKEY_META[item.form.turnkeyPackage] ?? TURNKEY_META.none;
               return (
                 <div
                   key={item.id}

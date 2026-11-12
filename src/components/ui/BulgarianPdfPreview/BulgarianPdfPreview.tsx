@@ -36,8 +36,8 @@ export function BulgarianPdfPreview({ form, calc }: BulgarianPdfPreviewProps) {
   const [activeTab, setActiveTab] = useState<'all' | 1 | 2 | 3 | 4>('all');
   const lang = form.lang || 'bg';
   const t = UI_TEXT[lang];
-  const sys = SYSTEM_META[form.system];
-  const tk = TURNKEY_META[form.turnkeyPackage];
+  const sys = SYSTEM_META[form.system] ?? SYSTEM_META.press_standard;
+  const tk = TURNKEY_META[form.turnkeyPackage] ?? TURNKEY_META.none;
   const respText = CUSTOMER_RESPONSIBILITY[lang];
 
   const handleZoomOut = () => setZoom((z) => Math.max(75, z - 10));

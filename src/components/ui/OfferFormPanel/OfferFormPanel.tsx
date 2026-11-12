@@ -796,20 +796,6 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
             );
           })}
         </div>
-        <div className="mb-4">
-          <input
-            type="text"
-            aria-label={lang === 'bg' ? 'Свободен текст за конструктивна система (по избор)' : 'Custom structural system text (optional)'}
-            value={form.systemCustomText ?? ''}
-            onChange={(e) => onUpdateForm({ systemCustomText: e.target.value })}
-            placeholder={
-              lang === 'bg'
-                ? 'Свободен текст за система / конструкция (оставете празно за горния избор)...'
-                : 'Custom structural system text (leave empty to use selection above)...'
-            }
-            className="w-full px-3 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-          />
-        </div>
 
         {calc.hasTurnkey && (
           <div className="rounded-lg bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200/70 dark:border-indigo-900/60 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
@@ -900,18 +886,6 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
               );
             })}
           </div>
-          <input
-            type="text"
-            aria-label={lang === 'bg' ? 'Свободен текст за покрив (по избор)' : 'Custom roof text (optional)'}
-            value={form.roofCustomText ?? ''}
-            onChange={(e) => onUpdateForm({ roofCustomText: e.target.value })}
-            placeholder={
-              lang === 'bg'
-                ? 'Свободен текст за покрив (оставете празно за горния избор)...'
-                : 'Custom roof description (leave empty to use selection above)...'
-            }
-            className="mt-2 w-full px-3 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-          />
         </div>
 
         {/* Window Profile (5/6/7-chamber PVC, Aluminium) & Glazing (Double, Triple, Frosted) */}
