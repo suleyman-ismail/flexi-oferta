@@ -1,25 +1,27 @@
-// Flexi Home ОФЕРТА Studio v1.0.0 – Offline-First Service Worker
-const CACHE = 'flexi-oferta-v100';
+// Flexi Home ОФЕРТА Studio v1.0.1 – Auto-Updating Offline-First Service Worker
+const CACHE = 'flexi-oferta-v101';
 const SHELL = [
   './',
   'index.html',
   'manifest.webmanifest',
-  'icon-180.png',
-  'icon-192.png',
-  'icon-512.png',
-  'icon-maskable-512.png',
+  'icon-180.png?v=2',
+  'icon-192.png?v=2',
+  'icon-512.png?v=2',
+  'icon-maskable-512.png?v=2',
   'flexi-home-logo.jpg',
 ];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
-    caches.open(CACHE).then((c) =>
-      Promise.allSettled(
-        SHELL.map((u) => c.add(new Request(u, { cache: 'reload' })))
+    caches
+      .open(CACHE)
+      .then((c) =>
+        Promise.allSettled(
+          SHELL.map((u) => c.add(new Request(u, { cache: 'reload' })))
+        )
       )
-    )
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (e) => {
@@ -41,14 +43,16 @@ self.addEventListener('fetch', (e) => {
   const u = new URL(e.request.url);
   if (e.request.method !== 'GET' || u.origin !== self.location.origin) return;
 
-  // Network-first for HTML navigation so updates appear immediately
+  // Network-first for HTML navigation, manifest, and app icons so updates appear immediately
   if (
     e.request.mode === 'navigate' ||
     u.pathname.endsWith('.html') ||
-    u.pathname.endsWith('/')
+    u.pathname.endsWith('/') ||
+    u.pathname.endsWith('manifest.webmanifest') ||
+    u.pathname.includes('/icon-')
   ) {
     e.respondWith(
-      fetch(e.request)
+      fetch(new Request(e.request, { cache: 'no-cache' }))
         .then((r) => {
           if (r && r.ok) {
             const copy = r.clone();

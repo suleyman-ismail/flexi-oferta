@@ -32,11 +32,47 @@ export const PwaInstallBanner: React.FC<PwaInstallBannerProps> = ({ lang }) => {
     window.addEventListener('online', onOnline);
     window.addEventListener('offline', onOffline);
 
-    // Register Service Worker for offline mode
+    // Register Service Worker with auto-update checks for installed PWAs
+    let swReg: ServiceWorkerRegistration | undefined;
+    let refreshing = false;
+    const hadController =
+      typeof navigator !== 'undefined' &&
+      'serviceWorker' in navigator &&
+      Boolean(navigator.serviceWorker.controller);
+
+    const handleControllerChange = () => {
+      if (!hadController || refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    };
+
+    const checkForUpdates = () => {
+      swReg?.update().catch(() => {
+        // ignore offline update check errors
+      });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkForUpdates();
+      }
+    };
+
     if ('serviceWorker' in navigator) {
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+      navigator.serviceWorker.addEventListener(
+        'controllerchange',
+        handleControllerChange
+      );
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('online', checkForUpdates);
+
       navigator.serviceWorker
-        .register(`${basePath}/sw.js`)
+        .register(`${basePath}/sw.js`, { updateViaCache: 'none' })
+        .then((reg) => {
+          swReg = reg;
+          checkForUpdates();
+        })
         .catch(() => {
           // ignore SW registration failure in dev/test
         });
@@ -48,12 +84,24 @@ export const PwaInstallBanner: React.FC<PwaInstallBannerProps> = ({ lang }) => {
       (window.navigator as any).standalone === true;
     setIsStandalone(Boolean(standalone));
 
+    const cleanupSwListeners = () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener(
+          'controllerchange',
+          handleControllerChange
+        );
+      }
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', checkForUpdates);
+    };
+
     try {
       const wasDismissed = localStorage.getItem(STORAGE_KEY);
       if (wasDismissed) {
         const dismissTime = parseInt(wasDismissed, 10);
         if (Date.now() - dismissTime < 7 * 24 * 60 * 60 * 1000) {
           return () => {
+            cleanupSwListeners();
             window.removeEventListener('online', onOnline);
             window.removeEventListener('offline', onOffline);
           };
@@ -81,6 +129,7 @@ export const PwaInstallBanner: React.FC<PwaInstallBannerProps> = ({ lang }) => {
     setIsIOS(isIosDevice);
 
     return () => {
+      cleanupSwListeners();
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
       window.removeEventListener('online', onOnline);
       window.removeEventListener('offline', onOffline);
