@@ -735,24 +735,29 @@ export function BulgarianPdfPreview({ form, calc }: BulgarianPdfPreviewProps) {
                   </div>
 
                   {/* Bank Financing / Credit Intermediation Notice (Postbank & UniCredit) */}
-                  <div className="mt-3 p-3.5 rounded-lg border-2 border-indigo-600/30 bg-indigo-50/70 text-xs">
-                    <div className="font-extrabold uppercase tracking-wide text-indigo-600 mb-1">
-                      {lang === 'bg'
-                        ? 'БАНКОВО ФИНАНСИРАНЕ И СЪДЕЙСТВИЕ ЗА КРЕДИТ'
-                        : 'BANK FINANCING & CREDIT ASSISTANCE'}
+                  <div className="mt-3 p-3.5 rounded-lg border-2 border-emerald-600 bg-emerald-50 shadow-sm text-xs">
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <span className="font-extrabold uppercase tracking-wide text-emerald-900">
+                        {lang === 'bg'
+                          ? 'БАНКОВО ФИНАНСИРАНЕ И СЪДЕЙСТВИЕ ЗА КРЕДИТ'
+                          : 'BANK FINANCING & CREDIT ASSISTANCE'}
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-emerald-700 text-white text-[10px] font-extrabold uppercase tracking-wider shrink-0">
+                        {lang === 'bg' ? 'ПАРТНЬОРСКИ БАНКИ' : 'PARTNER BANKS'}
+                      </span>
                     </div>
                     <p className="text-[11.5px] font-semibold text-zinc-900 leading-relaxed">
                       {lang === 'bg' ? (
                         <>
                           „С 1 ТРЕЙД“ ЕООД (Flexi Home) има сключени партньорски договори за кредитиране с{' '}
-                          <span className="font-extrabold text-indigo-600">Postbank</span> и{' '}
-                          <span className="font-extrabold text-indigo-600">UniCredit Bulbank</span>. Оказваме пълно съдействие и кредитно посредничество за финансиране на Вашия дом при преференциални условия.
+                          <span className="font-extrabold text-emerald-800 underline decoration-emerald-500/60">Postbank</span> и{' '}
+                          <span className="font-extrabold text-emerald-800 underline decoration-emerald-500/60">UniCredit Bulbank</span>. Оказваме пълно съдействие и кредитно посредничество за финансиране на Вашия дом при преференциални условия.
                         </>
                       ) : (
                         <>
                           „S 1 TRADE“ EOOD (Flexi Home) has active financing partnerships with{' '}
-                          <span className="font-extrabold text-indigo-600">Postbank</span> and{' '}
-                          <span className="font-extrabold text-indigo-600">UniCredit Bulbank</span>. We provide full credit intermediation and assistance to finance your home under preferential terms.
+                          <span className="font-extrabold text-emerald-800 underline decoration-emerald-500/60">Postbank</span> and{' '}
+                          <span className="font-extrabold text-emerald-800 underline decoration-emerald-500/60">UniCredit Bulbank</span>. We provide full credit intermediation and assistance to finance your home under preferential terms.
                         </>
                       )}
                     </p>

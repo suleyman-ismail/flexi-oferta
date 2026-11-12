@@ -835,33 +835,45 @@ export async function generateBulgarianOfferPdf(
                 stack: [
                   {
                     text: isEn
-                      ? 'BANK FINANCING & CREDIT ASSISTANCE'
-                      : 'БАНКОВО ФИНАНСИРАНЕ И СЪДЕЙСТВИЕ ЗА КРЕДИТ',
+                      ? 'BANK FINANCING & CREDIT ASSISTANCE  •  PARTNER BANKS'
+                      : 'БАНКОВО ФИНАНСИРАНЕ И СЪДЕЙСТВИЕ ЗА КРЕДИТ  •  ПАРТНЬОРСКИ БАНКИ',
                     bold: true,
-                    fontSize: 9,
-                    color: '#1B365D',
+                    fontSize: 9.5,
+                    color: '#065F46',
                   },
                   {
                     text: isEn
-                      ? '„S 1 TRADE“ EOOD (Flexi Home) has active financing partnerships with Postbank and UniCredit Bulbank. We provide full credit intermediation and assistance to finance your home under preferential terms.'
-                      : '„С 1 ТРЕЙД“ ЕООД (Flexi Home) има сключени партньорски договори за кредитиране с Postbank и UniCredit Bulbank. Оказваме пълно съдействие и кредитно посредничество за финансиране на Вашия дом при преференциални условия.',
+                      ? [
+                          '„S 1 TRADE“ EOOD (Flexi Home) has active financing partnerships with ',
+                          { text: 'Postbank', bold: true, color: '#047857' },
+                          ' and ',
+                          { text: 'UniCredit Bulbank', bold: true, color: '#047857' },
+                          '. We provide full credit intermediation and assistance to finance your home under preferential terms.',
+                        ]
+                      : [
+                          '„С 1 ТРЕЙД“ ЕООД (Flexi Home) има сключени партньорски договори за кредитиране с ',
+                          { text: 'Postbank', bold: true, color: '#047857' },
+                          ' и ',
+                          { text: 'UniCredit Bulbank', bold: true, color: '#047857' },
+                          '. Оказваме пълно съдействие и кредитно посредничество за финансиране на Вашия дом при преференциални условия.',
+                        ],
                     fontSize: 8.5,
                     bold: true,
                     color: '#0f172a',
-                    margin: [0, 2, 0, 0],
+                    margin: [0, 3, 0, 0],
                   },
                 ],
-                fillColor: '#f1f5fa',
-                margin: [8, 6, 8, 6],
+                fillColor: '#ECFDF5',
+                margin: [10, 7, 10, 7],
               },
             ],
           ],
         },
         layout: {
-          hLineWidth: () => 1,
-          vLineWidth: () => 1,
-          hLineColor: () => '#1B365D',
-          vLineColor: () => '#1B365D',
+          hLineWidth: () => 1.5,
+          vLineWidth: (i: number) => (i === 0 ? 4 : 1.5),
+          hLineColor: () => '#059669',
+          vLineColor: () => '#059669',
         },
         margin: [0, 0, 0, 8],
       },
