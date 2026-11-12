@@ -492,7 +492,7 @@ export function BulgarianPdfPreview({ form, calc }: BulgarianPdfPreviewProps) {
                               {formatEur(calc.foundationUnitRate)}/m²
                             </td>
                             <td className="py-2.5 px-3 text-right font-extrabold text-amber-950 whitespace-nowrap">
-                              {formatEur(calc.foundationTotal)}
+                              ≈ {formatEur(calc.foundationTotal)}
                             </td>
                           </tr>
                         ) : (
@@ -518,24 +518,36 @@ export function BulgarianPdfPreview({ form, calc }: BulgarianPdfPreviewProps) {
                   </div>
 
                   {/* Clear Totals Breakdown Box */}
-                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div className="p-3 rounded-lg bg-zinc-100 border border-zinc-300 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase text-zinc-500 block">
-                          {lang === 'bg'
-                            ? 'Вариант А (Базов)'
-                            : 'Option A (Base)'}
-                        </span>
-                        <span className="text-xs font-bold text-zinc-800">
-                          {lang === 'bg'
-                            ? 'Само Конструкция (до тапа) + Фундамент'
-                            : 'Shell Structure + Foundation Only'}
+                  <div
+                    className={`mt-3 grid grid-cols-1 ${
+                      calc.hasTurnkey ? 'sm:grid-cols-2' : ''
+                    } gap-2.5`}
+                  >
+                    {calc.hasTurnkey && (
+                      <div className="p-3 rounded-lg bg-zinc-100 border border-zinc-300 flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase text-zinc-500 block">
+                            {lang === 'bg'
+                              ? 'Вариант А (Базов)'
+                              : 'Option A (Base)'}
+                          </span>
+                          <span className="text-xs font-bold text-zinc-800">
+                            {form.includeFoundation
+                              ? lang === 'bg'
+                                ? 'Само Конструкция (до тапа) + прогнозен Фундамент'
+                                : 'Shell Structure + Indicative Foundation Only'
+                              : lang === 'bg'
+                              ? 'Само Конструкция (до тапа) — без фундамент'
+                              : 'Shell Structure Only — without foundation'}
+                          </span>
+                        </div>
+                        <span className="text-sm font-black text-zinc-900 whitespace-nowrap ml-2">
+                          {form.includeFoundation
+                            ? `≈ ${formatEur(calc.structurePlusFoundationTotal)}`
+                            : formatEur(calc.contractStructureNet)}
                         </span>
                       </div>
-                      <span className="text-sm font-black text-zinc-900">
-                        {formatEur(calc.structurePlusFoundationTotal)}
-                      </span>
-                    </div>
+                    )}
 
                     <div className="p-3 rounded-lg bg-indigo-600 text-white flex items-center justify-between shadow-sm">
                       <div>
@@ -550,16 +562,30 @@ export function BulgarianPdfPreview({ form, calc }: BulgarianPdfPreviewProps) {
                         </span>
                         <span className="text-xs font-bold">
                           {calc.hasTurnkey
+                            ? form.includeFoundation
+                              ? lang === 'bg'
+                                ? 'ОБЩА СТОЙНОСТ С ПАКЕТ „ДО КЛЮЧ“ И ФУНДАМЕНТ'
+                                : 'GRAND TOTAL WITH TURNKEY & FOUNDATION'
+                              : lang === 'bg'
+                              ? 'ОБЩА СТОЙНОСТ С ПАКЕТ „ДО КЛЮЧ“'
+                              : 'GRAND TOTAL WITH TURNKEY PACKAGE'
+                            : form.includeFoundation
                             ? lang === 'bg'
-                              ? 'ОБЩА СТОЙНОСТ С ПАКЕТ „ДО КЛЮЧ“ И ФУНДАМЕНТ'
-                              : 'GRAND TOTAL WITH TURNKEY & FOUNDATION'
+                              ? 'ОБЩА ПРОГНОЗНА СТОЙНОСТ (КОНСТРУКЦИЯ + ФУНДАМЕНТ)'
+                              : 'TOTAL ESTIMATED VALUE (STRUCTURE + FOUNDATION)'
                             : lang === 'bg'
-                            ? 'ОБЩА ПРОГНОЗНА СТОЙНОСТ НА ПРОЕКТА'
-                            : 'TOTAL ESTIMATED PROJECT VALUE'}
+                            ? 'ОБЩА ДОГОВОРНА СТОЙНОСТ (САМО КОНСТРУКЦИЯ)'
+                            : 'TOTAL CONTRACT VALUE (SHELL STRUCTURE ONLY)'}
                         </span>
                       </div>
-                      <span className="text-base font-black">
-                        {formatEur(calc.grandTotalWithTurnkey)}
+                      <span className="text-base font-black whitespace-nowrap ml-2">
+                        {calc.hasTurnkey
+                          ? form.includeFoundation
+                            ? `≈ ${formatEur(calc.grandTotalWithTurnkey)}`
+                            : formatEur(calc.contractWithTurnkeyTotal)
+                          : form.includeFoundation
+                          ? `≈ ${formatEur(calc.structurePlusFoundationTotal)}`
+                          : formatEur(calc.contractStructureNet)}
                       </span>
                     </div>
                   </div>
@@ -684,7 +710,7 @@ export function BulgarianPdfPreview({ form, calc }: BulgarianPdfPreviewProps) {
                         <tr className="bg-indigo-50/70">
                           <td className="py-2.5 px-3 font-extrabold text-indigo-950">
                             {lang === 'bg'
-                              ? 'ОБЩО ДОГОВОРНА СТОЙНОСТ (КРАЕН СБОР 100%)'
+                              ? 'ОБЩО ДОГОВОРНА СТОЙНОСТ ЗА КОНСТРУКЦИЯ (100%)'
                               : 'TOTAL STRUCTURE CONTRACT VALUE (100%)'}
                           </td>
                           <td className="py-2.5 px-2 text-center font-extrabold text-indigo-900">
