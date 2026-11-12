@@ -4,7 +4,7 @@ import './globals.css';
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 export const viewport: Viewport = {
-  themeColor: '#4f46e5',
+  themeColor: '#1B365D',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,

@@ -720,7 +720,7 @@ export const PERMIT_STATUS_OPTIONS: Array<{
   {
     key: 'has',
     label: {
-      bg: 'Имам разрешение за строеж',
+      bg: 'Има разрешение за строеж',
       en: 'Building permit available',
     },
   },
@@ -734,8 +734,8 @@ export const PERMIT_STATUS_OPTIONS: Array<{
   {
     key: 'none',
     label: {
-      bg: 'Все още нямам (съдействие от Flexi Home)',
-      en: 'Not yet (assistance from Flexi Home)',
+      bg: 'Няма разрешение (съдействие от Flexi Home)',
+      en: 'No permit yet (assistance from Flexi Home)',
     },
   },
 ];

@@ -102,7 +102,7 @@ export async function generateBulgarianOfferPdf(
                 {
                   text: pageSubtitle,
                   fontSize: 8,
-                  color: '#4f46e5',
+                  color: '#1B365D',
                   bold: true,
                   margin: [0, 2, 0, 0],
                 },
@@ -118,7 +118,7 @@ export async function generateBulgarianOfferPdf(
                     : `ОФЕРТА № ${form.offerNo}`,
                   fontSize: 13,
                   bold: true,
-                  color: '#4f46e5',
+                  color: '#1B365D',
                 },
                 {
                   text: isEn
@@ -149,7 +149,7 @@ export async function generateBulgarianOfferPdf(
               x2: 515,
               y2: 6,
               lineWidth: 1.5,
-              lineColor: '#4f46e5',
+              lineColor: '#1B365D',
             },
           ],
           margin: [0, 2, 0, 8],
@@ -167,7 +167,7 @@ export async function generateBulgarianOfferPdf(
         [
           {
             text: num,
-            fillColor: '#4f46e5',
+            fillColor: '#1B365D',
             color: '#ffffff',
             bold: true,
             fontSize: 9,
@@ -329,7 +329,7 @@ export async function generateBulgarianOfferPdf(
               ? 'Finishing works per selected material tier (quoted as a separate option)'
               : 'Довършителни работи по избрания клас материали (отделна опция към конструкцията)',
             fontSize: 7.5,
-            color: '#4f46e5',
+            color: '#1B365D',
             margin: [0, 1, 0, 0],
           },
         ],
@@ -860,7 +860,7 @@ export async function generateBulgarianOfferPdf(
             ],
             [
               { text: 'IBAN', style: 'kvLabel' },
-              { text: COMPANY_INFO.iban, style: 'kvVal', color: '#4f46e5' },
+              { text: COMPANY_INFO.iban, style: 'kvVal', color: '#1B365D' },
             ],
             [
               { text: 'BIC', style: 'kvLabel' },
