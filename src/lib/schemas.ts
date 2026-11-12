@@ -35,6 +35,16 @@ export const PricingConfigSchema = z.object({
   }),
 });
 
+export const UserProfileSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1),
+  pin: z.string().regex(/^\d{6}$/),
+  role: z.enum(['admin', 'agent']),
+  phone: z.string().optional(),
+  active: z.boolean(),
+  createdAt: z.string(),
+});
+
 export const OfferFormStateSchema = z.object({
   lang: z.enum(['bg', 'en']).default('bg'),
   offerNo: z.string().min(1),
@@ -47,8 +57,8 @@ export const OfferFormStateSchema = z.object({
   location: z.string(),
   fullAddress: z.string().default(''),
   permitStatus: z.enum(['has', 'process', 'none']).default('has'),
-  catalogModelId: z.string().default('e85'),
-  modelCodeLabel: z.string().default('MK-1 · 85 m²'),
+  catalogModelId: z.string().default('custom'),
+  modelCodeLabel: z.string().default(''),
   system: z.enum([
     'press_standard',
     'press_economy',
@@ -56,7 +66,7 @@ export const OfferFormStateSchema = z.object({
     'reinforced_metal',
   ]),
   floors: z.union([z.literal(1), z.literal(2)]),
-  pressTwoFloorVariant: z.enum(['489', '515']).default('489'),
+  pressTwoFloorVariant: z.enum(['489', '515']),
   areaRzp: z.number().positive(),
   includeFoundation: z.boolean(),
   foundationArea: z.number().nonnegative(),
@@ -95,13 +105,17 @@ export const OfferFormStateSchema = z.object({
   extraOptionLabel: z.string().default(''),
   extraOptionAmount: z.number().nonnegative().default(0),
   discountEur: z.number().nonnegative().default(0),
-  customNotes: z.string().default(''),
+  customNotes: z.string(),
 });
 
 export const SavedOfferSchema = z.object({
   id: z.string(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  createdByUserId: z.string().optional(),
+  createdByName: z.string().optional(),
+  createdByRole: z.enum(['admin', 'agent']).optional(),
+  isCustomPrice: z.boolean().optional(),
   form: OfferFormStateSchema,
   summary: z.object({
     structureTotal: z.number(),
@@ -116,4 +130,6 @@ export const BackupPayloadSchema = z.object({
   exportedAt: z.string(),
   pricingConfig: PricingConfigSchema,
   savedOffers: z.array(SavedOfferSchema),
+  users: z.array(UserProfileSchema).optional(),
+  lastOfferSeq: z.number().int().positive().optional(),
 });

@@ -60,6 +60,7 @@ interface OfferFormPanelProps {
   form: OfferFormState;
   pricingConfig: PricingConfig;
   calc: CalculatedOffer;
+  isAdmin?: boolean;
   onUpdateForm: (patch: Partial<OfferFormState>) => void;
   onSelectCatalogModel: (modelId: string) => void;
   onOpenPricingModal: () => void;
@@ -69,6 +70,7 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
   form,
   pricingConfig,
   calc,
+  isAdmin = true,
   onUpdateForm,
   onSelectCatalogModel,
   onOpenPricingModal,
@@ -236,10 +238,10 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
                 <input
                   id="offerNo"
                   type="text"
+                  readOnly
                   aria-label={T.offerNo}
                   value={form.offerNo}
-                  onChange={(e) => onUpdateForm({ offerNo: e.target.value })}
-                  className="w-full ps-8 pe-2 py-1.5 text-sm font-mono font-bold rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-indigo-600 dark:text-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+                  className="w-full ps-8 pe-2 py-1.5 text-sm font-mono font-bold rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 cursor-not-allowed focus:outline-none"
                 />
               </div>
               <button
@@ -339,15 +341,17 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
             <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             {T.sec2Title}
           </h2>
-          <button
-            type="button"
-            aria-label={T.editTariffsLink}
-            onClick={onOpenPricingModal}
-            className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
-          >
-            <Edit3 className="w-3 h-3" />
-            {T.editTariffsLink}
-          </button>
+          {isAdmin && (
+            <button
+              type="button"
+              aria-label={T.editTariffsLink}
+              onClick={onOpenPricingModal}
+              className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+            >
+              <Edit3 className="w-3 h-3" />
+              {T.editTariffsLink}
+            </button>
+          )}
         </div>
 
         {/* Storeys (1 Storey MK-1 vs 2 Storeys MK-2) */}

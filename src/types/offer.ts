@@ -1,5 +1,17 @@
 export type AppLang = 'bg' | 'en';
 
+export type UserRole = 'admin' | 'agent';
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  pin: string; // 6-digit PIN e.g. "123456"
+  role: UserRole;
+  phone?: string;
+  active: boolean;
+  createdAt: string;
+}
+
 export type SystemType =
   | 'press_standard'
   | 'press_economy'
@@ -69,7 +81,7 @@ export interface PricingConfig {
 
 export interface OfferFormState {
   lang: AppLang;
-  offerNo: string; // Automatically generated e.g. "26-0101"
+  offerNo: string; // Automatically generated sequentially e.g. "26-0101"
   date: string; // YYYY-MM-DD
   validityDays: number; // 15
   clientName: string;
@@ -88,7 +100,7 @@ export interface OfferFormState {
   includeFoundation: boolean;
   foundationArea: number; // Площ на основата (фундамент) m²
   turnkeyPackage: TurnkeyPackageType;
-  // Manual overrides (null means use automatic calculated rate from PricingConfig)
+  // Manual overrides (both admin and agents can enter custom unit rates)
   structureRateOverride: number | null;
   foundationRateOverride: number | null;
   turnkeyRateOverride: number | null;
@@ -148,6 +160,10 @@ export interface SavedOffer {
   id: string;
   createdAt: string;
   updatedAt: string;
+  createdByUserId?: string;
+  createdByName?: string;
+  createdByRole?: UserRole;
+  isCustomPrice?: boolean;
   form: OfferFormState;
   summary: {
     structureTotal: number;

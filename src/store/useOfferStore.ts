@@ -3,14 +3,50 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { CATALOG_MODELS, DEFAULT_PRICING_CONFIG } from '@/lib/constants';
-import { calculateOffer, generateOfferNumber } from '@/lib/pricingEngine';
+import {
+  calculateOffer,
+  generateOfferNumber,
+  getOfferSequenceValue,
+  setOfferSequenceValue,
+} from '@/lib/pricingEngine';
 import { BackupPayloadSchema } from '@/lib/schemas';
 import {
   AppLang,
   OfferFormState,
   PricingConfig,
   SavedOffer,
+  UserProfile,
 } from '@/types/offer';
+
+export const DEFAULT_USERS: UserProfile[] = [
+  {
+    id: 'admin-suleyman',
+    name: 'Сюлейман Исмаил',
+    pin: '123456',
+    role: 'admin',
+    phone: '+359 899 890085',
+    active: true,
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'agent-hasan',
+    name: 'Хасан (Агент)',
+    pin: '111111',
+    role: 'agent',
+    phone: '+359 887 604 360',
+    active: true,
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'agent-2',
+    name: 'Търговски агент 2',
+    pin: '222222',
+    role: 'agent',
+    phone: '',
+    active: true,
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+];
 
 export function createInitialFormState(lang: AppLang = 'bg'): OfferFormState {
   const today = new Date().toISOString().split('T')[0];
@@ -57,7 +93,21 @@ interface OfferStoreState {
   pricingConfig: PricingConfig;
   savedOffers: SavedOffer[];
   activeOfferId: string | null;
+  users: UserProfile[];
+  currentUserId: string | null;
   setLang: (lang: AppLang) => void;
+  loginWithPin: (pin: string) => {
+    ok: boolean;
+    user?: UserProfile;
+    errorBg?: string;
+    errorEn?: string;
+  };
+  logout: () => void;
+  addOrUpdateUser: (
+    user: Omit<UserProfile, 'id' | 'createdAt'> & { id?: string }
+  ) => { ok: boolean; errorBg?: string; errorEn?: string };
+  deleteUser: (id: string) => void;
+  toggleUserActive: (id: string) => void;
   selectCatalogModel: (modelId: string) => void;
   updateForm: (patch: Partial<OfferFormState>) => void;
   resetNewOffer: () => void;
@@ -77,6 +127,8 @@ export const useOfferStore = create<OfferStoreState>()(
       pricingConfig: DEFAULT_PRICING_CONFIG,
       savedOffers: [],
       activeOfferId: null,
+      users: DEFAULT_USERS,
+      currentUserId: null,
 
       setLang: (lang) =>
         set((state) => {
@@ -104,6 +156,123 @@ export const useOfferStore = create<OfferStoreState>()(
               country: nextCountry,
               modelCodeLabel: nextModelLabel,
             },
+          };
+        }),
+
+      loginWithPin: (pin) => {
+        const cleanPin = (pin || '').trim();
+        const { users } = get();
+        const found = users.find((u) => u.pin === cleanPin);
+        if (!found) {
+          return {
+            ok: false,
+            errorBg: 'Невалиден 6-цифрен PIN код',
+            errorEn: 'Invalid 6-digit PIN code',
+          };
+        }
+        if (!found.active) {
+          return {
+            ok: false,
+            errorBg: 'Този профил е деактивиран от администратора',
+            errorEn: 'This profile has been deactivated by the administrator',
+          };
+        }
+        set({ currentUserId: found.id });
+        return { ok: true, user: found };
+      },
+
+      logout: () => set({ currentUserId: null }),
+
+      addOrUpdateUser: (payload) => {
+        const cleanPin = (payload.pin || '').trim();
+        if (!/^\d{6}$/.test(cleanPin)) {
+          return {
+            ok: false,
+            errorBg: 'PIN кодът трябва да бъде точно 6 цифри.',
+            errorEn: 'PIN code must be exactly 6 digits.',
+          };
+        }
+        const cleanName = (payload.name || '').trim();
+        if (!cleanName) {
+          return {
+            ok: false,
+            errorBg: 'Моля, въведете име на потребителя.',
+            errorEn: 'Please enter a user name.',
+          };
+        }
+
+        const { users } = get();
+        const duplicatePin = users.find(
+          (u) => u.pin === cleanPin && u.id !== payload.id
+        );
+        if (duplicatePin) {
+          return {
+            ok: false,
+            errorBg: `Този PIN код вече се използва от ${duplicatePin.name}.`,
+            errorEn: `This PIN code is already used by ${duplicatePin.name}.`,
+          };
+        }
+
+        if (payload.id) {
+          set({
+            users: users.map((u) =>
+              u.id === payload.id
+                ? {
+                    ...u,
+                    name: cleanName,
+                    pin: cleanPin,
+                    role: payload.role,
+                    phone: payload.phone || '',
+                    active: payload.active,
+                  }
+                : u
+            ),
+          });
+        } else {
+          const newUser: UserProfile = {
+            id: `user-${Date.now()}`,
+            name: cleanName,
+            pin: cleanPin,
+            role: payload.role,
+            phone: payload.phone || '',
+            active: payload.active,
+            createdAt: new Date().toISOString(),
+          };
+          set({ users: [...users, newUser] });
+        }
+
+        return { ok: true };
+      },
+
+      deleteUser: (id) =>
+        set((state) => {
+          const remaining = state.users.filter((u) => u.id !== id);
+          // Always ensure at least one admin exists
+          if (!remaining.some((u) => u.role === 'admin' && u.active)) {
+            return state;
+          }
+          return {
+            users: remaining,
+            currentUserId:
+              state.currentUserId === id ? null : state.currentUserId,
+          };
+        }),
+
+      toggleUserActive: (id) =>
+        set((state) => {
+          const target = state.users.find((u) => u.id === id);
+          if (!target) return state;
+          // Prevent deactivating the last active admin
+          if (target.role === 'admin' && target.active) {
+            const otherActiveAdmins = state.users.filter(
+              (u) => u.id !== id && u.role === 'admin' && u.active
+            );
+            if (otherActiveAdmins.length === 0) return state;
+          }
+          return {
+            users: state.users.map((u) =>
+              u.id === id ? { ...u, active: !u.active } : u
+            ),
           };
         }),
 
@@ -183,13 +352,46 @@ export const useOfferStore = create<OfferStoreState>()(
         set({ pricingConfig: DEFAULT_PRICING_CONFIG }),
 
       saveCurrentOffer: () => {
-        const { form, pricingConfig, savedOffers, activeOfferId } = get();
-        const calc = calculateOffer(form, pricingConfig);
-        const now = new Date().toISOString();
+        const {
+          form,
+          pricingConfig,
+          savedOffers,
+          activeOfferId,
+          users,
+          currentUserId,
+        } = get();
+        const currentUser =
+          users.find((u) => u.id === currentUserId) || users[0];
 
         const existingIndex = activeOfferId
           ? savedOffers.findIndex((o) => o.id === activeOfferId)
           : -1;
+
+        // Ensure sequential offer number does not collide with an existing saved offer
+        let finalOfferNo = form.offerNo;
+        if (existingIndex < 0) {
+          const duplicateNo = savedOffers.some(
+            (o) => o.form.offerNo === finalOfferNo
+          );
+          if (duplicateNo) {
+            finalOfferNo = generateOfferNumber(true);
+          }
+        }
+
+        const finalForm: OfferFormState = {
+          ...form,
+          offerNo: finalOfferNo,
+        };
+
+        const calc = calculateOffer(finalForm, pricingConfig);
+        const now = new Date().toISOString();
+
+        const isCustomPrice =
+          finalForm.structureRateOverride !== null ||
+          finalForm.foundationRateOverride !== null ||
+          finalForm.turnkeyRateOverride !== null ||
+          finalForm.discountEur > 0 ||
+          finalForm.extraOptionAmount > 0;
 
         const savedRecord: SavedOffer = {
           id:
@@ -201,7 +403,20 @@ export const useOfferStore = create<OfferStoreState>()(
               ? savedOffers[existingIndex].createdAt
               : now,
           updatedAt: now,
-          form: { ...form },
+          createdByUserId:
+            existingIndex >= 0 && savedOffers[existingIndex].createdByUserId
+              ? savedOffers[existingIndex].createdByUserId
+              : currentUser?.id || 'admin-suleyman',
+          createdByName:
+            existingIndex >= 0 && savedOffers[existingIndex].createdByName
+              ? savedOffers[existingIndex].createdByName
+              : currentUser?.name || 'Сюлейман Исмаил',
+          createdByRole:
+            existingIndex >= 0 && savedOffers[existingIndex].createdByRole
+              ? savedOffers[existingIndex].createdByRole
+              : currentUser?.role || 'admin',
+          isCustomPrice,
+          form: finalForm,
           summary: {
             structureTotal: calc.contractStructureNet,
             turnkeyTotal: calc.turnkeyTotal,
@@ -218,6 +433,7 @@ export const useOfferStore = create<OfferStoreState>()(
             : [savedRecord, ...savedOffers];
 
         set({
+          form: finalForm,
           savedOffers: nextList,
           activeOfferId: savedRecord.id,
         });
@@ -256,40 +472,51 @@ export const useOfferStore = create<OfferStoreState>()(
         })),
 
       exportBackupJson: () => {
-        const { pricingConfig, savedOffers } = get();
+        const { pricingConfig, savedOffers, users } = get();
         const payload = {
           version: 1 as const,
           exportedAt: new Date().toISOString(),
           pricingConfig,
           savedOffers,
+          users,
+          lastOfferSeq: getOfferSequenceValue(),
         };
         return JSON.stringify(payload, null, 2);
       },
 
-      importBackupJson: (rawJson: string) => {
+      importBackupJson: (rawJson) => {
         const lang = get().form.lang || 'bg';
         try {
-          const parsedJson = JSON.parse(rawJson);
-          const validated = BackupPayloadSchema.safeParse(parsedJson);
+          const parsed = JSON.parse(rawJson);
+          const validated = BackupPayloadSchema.safeParse(parsed);
           if (!validated.success) {
             return {
               ok: false,
               message:
                 lang === 'en'
-                  ? 'Invalid backup file format. Please select a valid Flexi Home JSON backup.'
-                  : 'Невалиден формат на файла. Моля, изберете валиден JSON архив на Flexi Home.',
+                  ? 'Invalid JSON backup format.'
+                  : 'Невалиден формат на JSON резервно копие.',
             };
           }
-          set({
+
+          if (validated.data.lastOfferSeq) {
+            setOfferSequenceValue(validated.data.lastOfferSeq);
+          }
+
+          set((state) => ({
             pricingConfig: validated.data.pricingConfig,
             savedOffers: validated.data.savedOffers,
-          });
+            users: validated.data.users?.length
+              ? validated.data.users
+              : state.users,
+          }));
+
           return {
             ok: true,
             message:
               lang === 'en'
-                ? `${validated.data.savedOffers.length} quotes and unit price settings restored.`
-                : `Успешно възстановени ${validated.data.savedOffers.length} оферти и ценови тарифи.`,
+                ? `Successfully restored ${validated.data.savedOffers.length} quotes, users and pricing tables.`
+                : `Успешно възстановени ${validated.data.savedOffers.length} оферти, профили и ценови тарифи.`,
           };
         } catch {
           return {
@@ -303,7 +530,7 @@ export const useOfferStore = create<OfferStoreState>()(
       },
     }),
     {
-      name: 'flexi-home-oferta-storage-v2',
+      name: 'flexi-home-oferta-storage-v3',
     }
   )
 );

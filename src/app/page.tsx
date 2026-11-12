@@ -11,13 +11,22 @@ import { BulgarianPdfPreview } from '@/components/ui/BulgarianPdfPreview/Bulgari
 import { PricingSettingsModal } from '@/components/ui/PricingSettingsModal/PricingSettingsModal';
 import { SavedOffersDrawer } from '@/components/ui/SavedOffersDrawer/SavedOffersDrawer';
 import { PwaInstallBanner } from '@/components/ui/PwaInstallBanner/PwaInstallBanner';
+import { PinLoginScreen } from '@/components/ui/PinLoginScreen/PinLoginScreen';
+import { AdminDashboardModal } from '@/components/ui/AdminDashboardModal/AdminDashboardModal';
 
 export default function HomePage() {
   const {
     form,
     pricingConfig,
     savedOffers,
+    users,
+    currentUserId,
     setLang,
+    loginWithPin,
+    logout,
+    addOrUpdateUser,
+    deleteUser,
+    toggleUserActive,
     selectCatalogModel,
     updateForm,
     resetNewOffer,
@@ -35,6 +44,7 @@ export default function HomePage() {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [isSavedDrawerOpen, setIsSavedDrawerOpen] = useState(false);
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [toast, setToast] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -52,6 +62,20 @@ export default function HomePage() {
       root.classList.remove('dark');
     }
   }, [darkMode]);
+
+  const currentUser = useMemo(
+    () => users.find((u) => u.id === currentUserId && u.active) || null,
+    [users, currentUserId]
+  );
+
+  const isAdmin = currentUser?.role === 'admin';
+
+  // Agents see ONLY their own saved offers; Admin sees all offers
+  const visibleOffers = useMemo(() => {
+    if (!currentUser) return [];
+    if (currentUser.role === 'admin') return savedOffers;
+    return savedOffers.filter((o) => o.createdByUserId === currentUser.id);
+  }, [savedOffers, currentUser]);
 
   const showToast = (type: 'success' | 'error', message: string) => {
     setToast({ type, message });
@@ -71,8 +95,8 @@ export default function HomePage() {
     showToast(
       'success',
       lang === 'bg'
-        ? `Оферта № ${saved.form.offerNo} (${saved.form.clientName}) е запазена.`
-        : `Offer No. ${saved.form.offerNo} (${saved.form.clientName}) saved.`
+        ? `Оферта № ${saved.form.offerNo} (${saved.form.clientName}) е запазена от ${saved.createdByName}.`
+        : `Offer No. ${saved.form.offerNo} (${saved.form.clientName}) saved by ${saved.createdByName}.`
     );
   };
 
@@ -81,8 +105,8 @@ export default function HomePage() {
     showToast(
       'success',
       lang === 'bg'
-        ? 'Създаден е нов формуляр с автоматичен номер на оферта.'
-        : 'Created new offer form with automatic offer number.'
+        ? 'Създаден е нов формуляр с автоматичен пореден номер.'
+        : 'Created new offer form with automatic sequential number.'
     );
   };
 
@@ -122,13 +146,42 @@ export default function HomePage() {
     );
   }
 
+  // PIN Lock Screen when not authenticated
+  if (!currentUser) {
+    return (
+      <div className="min-h-dvh flex flex-col">
+        <PwaInstallBanner lang={lang} />
+        <div className="flex-1">
+          <PinLoginScreen
+            lang={lang}
+            onSetLang={setLang}
+            onLoginWithPin={(pin) => {
+              const res = loginWithPin(pin);
+              if (res.ok && res.user) {
+                showToast(
+                  'success',
+                  lang === 'bg'
+                    ? `Добре дошли, ${res.user.name}!`
+                    : `Welcome, ${res.user.name}!`
+                );
+              }
+              return res;
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen lg:h-screen flex flex-col bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 overflow-x-hidden">
       <PwaInstallBanner lang={lang} />
       <StudioHeader
         lang={lang}
         offerNo={form.offerNo}
-        savedCount={savedOffers.length}
+        savedCount={visibleOffers.length}
+        totalTeamOffersCount={savedOffers.length}
+        currentUser={currentUser}
         isGeneratingPdf={isGeneratingPdf}
         darkMode={darkMode}
         onSetLang={setLang}
@@ -138,6 +191,13 @@ export default function HomePage() {
         onDownloadPdf={handleDownloadPdf}
         onOpenPricingModal={() => setIsPricingOpen(true)}
         onOpenSavedDrawer={() => setIsSavedDrawerOpen(true)}
+        onOpenAdminModal={() => setIsAdminOpen(true)}
+        onLogout={() => {
+          setIsAdminOpen(false);
+          setIsPricingOpen(false);
+          setIsSavedDrawerOpen(false);
+          logout();
+        }}
       />
 
       {/* Toast Notification */}
@@ -168,6 +228,7 @@ export default function HomePage() {
             form={form}
             pricingConfig={pricingConfig}
             calc={calc}
+            isAdmin={isAdmin}
             onUpdateForm={updateForm}
             onSelectCatalogModel={selectCatalogModel}
             onOpenPricingModal={() => setIsPricingOpen(true)}
@@ -181,35 +242,78 @@ export default function HomePage() {
       </main>
 
       {/* Modals & Drawers */}
-      <PricingSettingsModal
-        lang={lang}
-        isOpen={isPricingOpen}
-        pricing={pricingConfig}
-        onClose={() => setIsPricingOpen(false)}
-        onSavePricing={(next) => {
-          updatePricingConfig(next);
-          showToast(
-            'success',
-            lang === 'bg'
-              ? 'Тарифите са обновени успешно.'
-              : 'Unit pricing rates updated successfully.'
-          );
-        }}
-        onResetDefaults={() => {
-          resetPricingConfig();
-          showToast(
-            'success',
-            lang === 'bg'
-              ? 'Възстановени са стандартните тарифи на flexi-home.eu.'
-              : 'Restored default flexi-home.eu unit rates.'
-          );
-        }}
-      />
+      {isAdmin && (
+        <PricingSettingsModal
+          lang={lang}
+          isOpen={isPricingOpen}
+          pricing={pricingConfig}
+          onClose={() => setIsPricingOpen(false)}
+          onSavePricing={(next) => {
+            updatePricingConfig(next);
+            showToast(
+              'success',
+              lang === 'bg'
+                ? 'Тарифите са обновени успешно.'
+                : 'Unit pricing rates updated successfully.'
+            );
+          }}
+          onResetDefaults={() => {
+            resetPricingConfig();
+            showToast(
+              'success',
+              lang === 'bg'
+                ? 'Възстановени са стандартните тарифи на flexi-home.eu.'
+                : 'Restored default flexi-home.eu unit rates.'
+            );
+          }}
+        />
+      )}
+
+      {isAdmin && (
+        <AdminDashboardModal
+          lang={lang}
+          isOpen={isAdminOpen}
+          users={users}
+          savedOffers={savedOffers}
+          currentOfferNo={form.offerNo}
+          onClose={() => setIsAdminOpen(false)}
+          onAddOrUpdateUser={addOrUpdateUser}
+          onDeleteUser={deleteUser}
+          onToggleUserActive={toggleUserActive}
+          onLoadOffer={(id, asCopy) => {
+            loadOfferForRevision(id, asCopy);
+            showToast(
+              'success',
+              asCopy
+                ? lang === 'bg'
+                  ? 'Офертата е копирана с нов пореден номер за ревизия.'
+                  : 'Offer duplicated with a new sequential number for revision.'
+                : lang === 'bg'
+                ? 'Офертата е заредена в студиото.'
+                : 'Offer loaded into the studio.'
+            );
+          }}
+          onDeleteOffer={(id) => {
+            deleteSavedOffer(id);
+            showToast(
+              'success',
+              lang === 'bg'
+                ? 'Офертата е изтрита от архива.'
+                : 'Offer deleted from archive.'
+            );
+          }}
+          onSyncCurrentOfferNo={(nextOfferNo) => {
+            updateForm({ offerNo: nextOfferNo });
+          }}
+          onExportJson={exportBackupJson}
+          onImportJson={importBackupJson}
+        />
+      )}
 
       <SavedOffersDrawer
         lang={lang}
         isOpen={isSavedDrawerOpen}
-        savedOffers={savedOffers}
+        savedOffers={visibleOffers}
         onClose={() => setIsSavedDrawerOpen(false)}
         onLoadOffer={(id, asCopy) => {
           loadOfferForRevision(id, asCopy);

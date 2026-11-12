@@ -418,8 +418,32 @@ export function formatEur(amount: number): string {
 
 const COUNTER_KEY = 'flexi_home_offer_seq_counter_v1';
 
+export function getOfferSequenceValue(): number {
+  if (typeof window === 'undefined') return 101;
+  try {
+    const raw = window.localStorage.getItem(COUNTER_KEY);
+    const parsed = raw ? parseInt(raw, 10) : 101;
+    return !Number.isNaN(parsed) && parsed >= 1 ? parsed : 101;
+  } catch {
+    return 101;
+  }
+}
+
+export function setOfferSequenceValue(nextSeq: number): string {
+  const safe = Math.max(1, Math.round(nextSeq || 101));
+  const yy = String(new Date().getFullYear()).slice(-2);
+  if (typeof window !== 'undefined') {
+    try {
+      window.localStorage.setItem(COUNTER_KEY, String(safe));
+    } catch {
+      // ignore
+    }
+  }
+  return `${yy}-${String(safe).padStart(4, '0')}`;
+}
+
 /**
- * Automatically generates a sequential + date-stamped offer number (e.g., "26-0101" or "26-1112-01")
+ * Automatically generates a sequential offer number (e.g., "26-0101", "26-0102")
  * persisted in localStorage so every new offer automatically receives the next unique number.
  */
 export function generateOfferNumber(increment = true): string {
@@ -430,10 +454,10 @@ export function generateOfferNumber(increment = true): string {
     try {
       const raw = window.localStorage.getItem(COUNTER_KEY);
       const parsed = raw ? parseInt(raw, 10) : 100;
-      if (!Number.isNaN(parsed) && parsed >= 100) {
+      if (!Number.isNaN(parsed) && parsed >= 1) {
         seq = increment ? parsed + 1 : parsed;
       }
-      if (increment) {
+      if (increment || !raw) {
         window.localStorage.setItem(COUNTER_KEY, String(seq));
       }
     } catch {
