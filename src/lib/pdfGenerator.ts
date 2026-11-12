@@ -824,7 +824,46 @@ export async function generateBulgarianOfferPdf(
           ],
         },
         layout: 'noBorders',
-        margin: [0, 6, 0, 8],
+        margin: [0, 6, 0, 6],
+      },
+      {
+        table: {
+          widths: ['*'],
+          body: [
+            [
+              {
+                stack: [
+                  {
+                    text: isEn
+                      ? 'BANK FINANCING & CREDIT ASSISTANCE'
+                      : 'БАНКОВО ФИНАНСИРАНЕ И СЪДЕЙСТВИЕ ЗА КРЕДИТ',
+                    bold: true,
+                    fontSize: 9,
+                    color: '#1B365D',
+                  },
+                  {
+                    text: isEn
+                      ? '„S 1 TRADE“ EOOD (Flexi Home) has active financing partnerships with Postbank and UniCredit Bulbank. We provide full credit intermediation and assistance to finance your home under preferential terms.'
+                      : '„С 1 ТРЕЙД“ ЕООД (Flexi Home) има сключени партньорски договори за кредитиране с Postbank и UniCredit Bulbank. Оказваме пълно съдействие и кредитно посредничество за финансиране на Вашия дом при преференциални условия.',
+                    fontSize: 8.5,
+                    bold: true,
+                    color: '#0f172a',
+                    margin: [0, 2, 0, 0],
+                  },
+                ],
+                fillColor: '#f1f5fa',
+                margin: [8, 6, 8, 6],
+              },
+            ],
+          ],
+        },
+        layout: {
+          hLineWidth: () => 1,
+          vLineWidth: () => 1,
+          hLineColor: () => '#1B365D',
+          vLineColor: () => '#1B365D',
+        },
+        margin: [0, 0, 0, 8],
       },
 
       ...(form.customNotes

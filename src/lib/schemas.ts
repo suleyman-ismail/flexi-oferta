@@ -53,7 +53,7 @@ export const OfferFormStateSchema = z.object({
   region: z.string().default(''),
   location: z.string(),
   fullAddress: z.string().default(''),
-  permitStatus: z.enum(['has', 'process', 'none']).default('has'),
+  permitStatus: z.enum(['has', 'process', 'none', 'unknown']).default('has'),
   catalogModelId: z.string().default('custom'),
   modelCodeLabel: z.string().default(''),
   system: z.enum([

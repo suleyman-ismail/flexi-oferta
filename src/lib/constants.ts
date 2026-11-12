@@ -738,6 +738,13 @@ export const PERMIT_STATUS_OPTIONS: Array<{
       en: 'No permit yet (assistance from Flexi Home)',
     },
   },
+  {
+    key: 'unknown',
+    label: {
+      bg: 'Не е уточнено',
+      en: 'Undetermined',
+    },
+  },
 ];
 
 export const BASE_INCLUDED_SCOPE: Record<AppLang, string[]> = {

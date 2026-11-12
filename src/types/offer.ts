@@ -39,7 +39,7 @@ export type FacadeKey =
   | 'etalbond';
 export type WallHeightKey = '250' | '280' | '300';
 export type CeilingInsulKey = '80' | '160';
-export type PermitStatusKey = 'has' | 'process' | 'none';
+export type PermitStatusKey = 'has' | 'process' | 'none' | 'unknown';
 
 export interface TieredRates {
   upTo50: number;
