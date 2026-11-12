@@ -22,8 +22,8 @@ export const metadata: Metadata = {
     title: 'Flexi Оферта',
   },
   icons: {
-    icon: `${basePath}/icon-192.png`,
-    apple: `${basePath}/icon-180.png`,
+    icon: `${basePath}/icon-192.png?v=2`,
+    apple: `${basePath}/icon-180.png?v=2`,
   },
   openGraph: {
     title: 'Flexi Home | ОФЕРТА Studio — „С 1 ТРЕЙД“ ЕООД',
