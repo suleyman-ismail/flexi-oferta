@@ -353,7 +353,7 @@ export async function generateBulgarianOfferPdf(
           {
             text: isEn
               ? 'Foundation (Reinforced concrete sub-base)'
-              : 'Фундамент (Стоманобетонна основа / субасман)',
+              : 'Фундамент (Стоманобетонна основа / плоча)',
             bold: true,
             fontSize: 8.5,
             color: '#334155',
