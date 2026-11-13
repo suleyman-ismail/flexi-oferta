@@ -26,8 +26,8 @@ export type TurnkeyPackageType =
   | 'luxury_680'
   | 'custom';
 
-export type RoofColorKey = 'black' | 'red' | 'green' | 'white';
-export type WinColorKey = 'anthracite' | 'oak' | 'white';
+export type RoofColorKey = 'black' | 'red' | 'green' | 'white' | 'unknown';
+export type WinColorKey = 'anthracite' | 'oak' | 'white' | 'unknown';
 export type WinProfileKey = 'pvc_5ch' | 'pvc_6ch' | 'pvc_7ch' | 'alu_thermal';
 export type WinGlazingKey = 'double' | 'triple' | 'double_frosted';
 export type FacadeKey =

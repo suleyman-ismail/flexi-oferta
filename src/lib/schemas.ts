@@ -71,8 +71,8 @@ export const OfferFormStateSchema = z.object({
   structureRateOverride: z.number().nonnegative().nullable(),
   foundationRateOverride: z.number().nonnegative().nullable(),
   turnkeyRateOverride: z.number().nonnegative().nullable(),
-  roofColorKey: z.enum(['black', 'red', 'green', 'white']).default('black'),
-  winColorKey: z.enum(['anthracite', 'oak', 'white']).default('anthracite'),
+  roofColorKey: z.enum(['black', 'red', 'green', 'white', 'unknown']).default('black'),
+  winColorKey: z.enum(['anthracite', 'oak', 'white', 'unknown']).default('anthracite'),
   winProfileKey: z
     .enum(['pvc_5ch', 'pvc_6ch', 'pvc_7ch', 'alu_thermal'])
     .default('pvc_5ch'),

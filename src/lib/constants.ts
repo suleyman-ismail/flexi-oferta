@@ -469,6 +469,19 @@ export const ROOF_OPTIONS: Array<{
       en: 'White (Grey-White · RAL 9002)',
     },
   },
+  {
+    key: 'unknown',
+    colorHex: '#94a3b8',
+    ral: '—',
+    label: {
+      bg: 'Не е уточнен',
+      en: 'Undetermined',
+    },
+    docVal: {
+      bg: 'Не е уточнен (по избор на клиента)',
+      en: 'Undetermined (to be selected)',
+    },
+  },
 ];
 
 export const WIN_COLOR_OPTIONS: Array<{
@@ -515,6 +528,19 @@ export const WIN_COLOR_OPTIONS: Array<{
     docVal: {
       bg: 'Бял (RAL 9016)',
       en: 'White (RAL 9016)',
+    },
+  },
+  {
+    key: 'unknown',
+    colorHex: '#94a3b8',
+    ral: '—',
+    label: {
+      bg: 'Не е уточнен',
+      en: 'Undetermined',
+    },
+    docVal: {
+      bg: 'Не е уточнен (по избор на клиента)',
+      en: 'Undetermined (to be selected)',
     },
   },
 ];
