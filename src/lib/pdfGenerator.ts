@@ -758,6 +758,97 @@ export async function generateBulgarianOfferPdf(
                 color: '#1e1b4b',
               },
             ],
+            ...(calc.hasTurnkey
+              ? [
+                  [
+                    {
+                      text: isEn
+                        ? `+ Turnkey Package (${calc.turnkeyName}) — finishing works schedule`
+                        : `+ Пакет „До ключ“ (${calc.turnkeyName}) — по график за довършителни работи`,
+                      bold: true,
+                      fillColor: '#ecfdf5',
+                      color: '#065f46',
+                      fontSize: 8.5,
+                    },
+                    {
+                      text: '—',
+                      alignment: 'right',
+                      fillColor: '#ecfdf5',
+                      color: '#065f46',
+                      fontSize: 8.5,
+                    },
+                    {
+                      text: `+${formatEur(calc.turnkeyTotal)}`,
+                      alignment: 'right',
+                      bold: true,
+                      fillColor: '#ecfdf5',
+                      color: '#065f46',
+                      fontSize: 9,
+                    },
+                  ],
+                ]
+              : []),
+            ...(form.includeFoundation
+              ? [
+                  [
+                    {
+                      text: isEn
+                        ? '+ Foundation (Concrete Base) — upon base execution'
+                        : '+ Фундамент (Стоманобетонна основа) — при изпълнение на основата',
+                      bold: true,
+                      fillColor: '#fffbeb',
+                      color: '#92400e',
+                      fontSize: 8.5,
+                    },
+                    {
+                      text: '—',
+                      alignment: 'right',
+                      fillColor: '#fffbeb',
+                      color: '#92400e',
+                      fontSize: 8.5,
+                    },
+                    {
+                      text: `≈ +${formatEur(calc.foundationTotal)}`,
+                      alignment: 'right',
+                      bold: true,
+                      fillColor: '#fffbeb',
+                      color: '#92400e',
+                      fontSize: 9,
+                    },
+                  ],
+                ]
+              : []),
+            ...(calc.hasTurnkey || form.includeFoundation
+              ? [
+                  [
+                    {
+                      text: isEn
+                        ? 'TOTAL PROJECT VALUE (ALL SELECTED ITEMS)'
+                        : 'ОБЩА СТОЙНОСТ НА ПРОЕКТА (ВСИЧКО ВКЛЮЧЕНО)',
+                      bold: true,
+                      fillColor: '#312e81',
+                      color: '#ffffff',
+                      fontSize: 9.5,
+                    },
+                    {
+                      text: isEn ? 'Total' : 'Общо',
+                      alignment: 'right',
+                      bold: true,
+                      fillColor: '#312e81',
+                      color: '#c7d2fe',
+                      fontSize: 8.5,
+                    },
+                    {
+                      text: `${form.includeFoundation ? '≈ ' : ''}${formatEur(calc.grandTotalWithTurnkey)}`,
+                      alignment: 'right',
+                      bold: true,
+                      fillColor: '#312e81',
+                      color: '#ffffff',
+                      fontSize: 10,
+                    },
+                  ],
+                ]
+              : []),
           ],
         },
         layout: {

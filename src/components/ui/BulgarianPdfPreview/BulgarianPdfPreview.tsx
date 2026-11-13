@@ -720,6 +720,52 @@ export function BulgarianPdfPreview({ form, calc }: BulgarianPdfPreviewProps) {
                             {formatEur(calc.contractStructureNet)}
                           </td>
                         </tr>
+                        {calc.hasTurnkey && (
+                          <tr className="bg-emerald-50/50">
+                            <td className="py-2.5 px-3 font-bold text-emerald-950">
+                              {lang === 'bg'
+                                ? `+ Пакет „До ключ“ (${calc.turnkeyName}) — по график за довършителни работи`
+                                : `+ Turnkey Package (${calc.turnkeyName}) — finishing works schedule`}
+                            </td>
+                            <td className="py-2.5 px-2 text-center font-semibold text-emerald-700">
+                              —
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-extrabold text-emerald-800 whitespace-nowrap">
+                              +{formatEur(calc.turnkeyTotal)}
+                            </td>
+                          </tr>
+                        )}
+                        {form.includeFoundation && (
+                          <tr className="bg-amber-50/60">
+                            <td className="py-2.5 px-3 font-bold text-amber-950">
+                              {lang === 'bg'
+                                ? '+ Фундамент (Стоманобетонна основа) — при изпълнение на основата'
+                                : '+ Foundation (Concrete Base) — upon base execution'}
+                            </td>
+                            <td className="py-2.5 px-2 text-center font-semibold text-amber-700">
+                              —
+                            </td>
+                            <td className="py-2.5 px-3 text-right font-extrabold text-amber-900 whitespace-nowrap">
+                              ≈ +{formatEur(calc.foundationTotal)}
+                            </td>
+                          </tr>
+                        )}
+                        {(calc.hasTurnkey || form.includeFoundation) && (
+                          <tr className="bg-indigo-600 text-white">
+                            <td className="py-3 px-3 font-extrabold uppercase tracking-wide">
+                              {lang === 'bg'
+                                ? 'ОБЩА СТОЙНОСТ НА ПРОЕКТА (ВСИЧКО ВКЛЮЧЕНО)'
+                                : 'TOTAL PROJECT VALUE (ALL SELECTED ITEMS)'}
+                            </td>
+                            <td className="py-3 px-2 text-center font-bold text-indigo-200">
+                              {lang === 'bg' ? 'Общо' : 'Total'}
+                            </td>
+                            <td className="py-3 px-3 text-right font-black text-sm whitespace-nowrap">
+                              {form.includeFoundation ? '≈ ' : ''}
+                              {formatEur(calc.grandTotalWithTurnkey)}
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </div>
