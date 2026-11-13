@@ -536,6 +536,22 @@ export function formatEur(amount: number): string {
   return `${amount.toLocaleString('bg-BG').replace(/\u00A0/g, ' ')} €`;
 }
 
+export function formatValidUntilDate(
+  dateIso: string,
+  validityDays: number
+): string {
+  const safeDays = Math.max(1, Math.round(validityDays || 30));
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec((dateIso || '').trim());
+  const baseMs = match
+    ? Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+    : Date.now();
+  const target = new Date(baseMs + safeDays * 86_400_000);
+  const dd = String(target.getUTCDate()).padStart(2, '0');
+  const mm = String(target.getUTCMonth() + 1).padStart(2, '0');
+  const yyyy = target.getUTCFullYear();
+  return `${dd}.${mm}.${yyyy}`;
+}
+
 const COUNTER_KEY = 'flexi_home_offer_seq_counter_v1';
 
 export function getOfferSequenceValue(): number {

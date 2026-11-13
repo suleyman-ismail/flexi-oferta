@@ -23,7 +23,7 @@ import {
   CUSTOMER_RESPONSIBILITY,
   UI_TEXT,
 } from '@/lib/constants';
-import { formatEur } from '@/lib/pricingEngine';
+import { formatEur, formatValidUntilDate } from '@/lib/pricingEngine';
 import { formatBgDate } from '@/lib/pdfGenerator';
 
 export interface BulgarianPdfPreviewProps {
@@ -176,7 +176,9 @@ export function BulgarianPdfPreview({ form, calc }: BulgarianPdfPreviewProps) {
                       </span>{' '}
                       | {lang === 'bg' ? 'Валидност' : 'Validity'}:{' '}
                       <span className="font-semibold">
-                        {form.validityDays} {lang === 'bg' ? 'дни' : 'days'}
+                        {form.validityDays} {lang === 'bg' ? 'дни' : 'days'} (
+                        {lang === 'bg' ? 'до' : 'until'}{' '}
+                        {formatValidUntilDate(form.date, form.validityDays)})
                       </span>
                     </p>
                     <p className="text-[11px] font-semibold text-indigo-700 mt-0.5">

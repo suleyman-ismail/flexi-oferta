@@ -54,7 +54,7 @@ export function createInitialFormState(lang: AppLang = 'bg'): OfferFormState {
     lang,
     offerNo: generateOfferNumber(false),
     date: today,
-    validityDays: 15,
+    validityDays: 30,
     clientName: 'Иван Петров',
     clientPhone: '+359 888 450 120',
     country: lang === 'en' ? 'Bulgaria' : 'България',

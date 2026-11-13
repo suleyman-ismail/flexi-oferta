@@ -2,7 +2,7 @@ import {
   COMPANY_INFO,
   CUSTOMER_RESPONSIBILITY,
 } from './constants';
-import { formatEur } from './pricingEngine';
+import { formatEur, formatValidUntilDate } from './pricingEngine';
 import { CalculatedOffer, OfferFormState } from '@/types/offer';
 
 async function fetchLogoBase64(): Promise<string | null> {
@@ -130,8 +130,8 @@ export async function generateBulgarianOfferPdf(
                 },
                 {
                   text: isEn
-                    ? `Validity: ${form.validityDays} days  |  Currency: ${COMPANY_INFO.currency}`
-                    : `Валидност: ${form.validityDays} дни  |  Валута: ${COMPANY_INFO.currency}`,
+                    ? `Validity: ${form.validityDays} days (until ${formatValidUntilDate(form.date, form.validityDays)})  |  Currency: ${COMPANY_INFO.currency}`
+                    : `Валидност: ${form.validityDays} дни (до ${formatValidUntilDate(form.date, form.validityDays)})  |  Валута: ${COMPANY_INFO.currency}`,
                   fontSize: 8,
                   color: '#64748b',
                   margin: [0, 1, 0, 0],

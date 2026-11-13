@@ -353,7 +353,7 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
                 value={form.validityDays}
                 onChange={(e) =>
                   onUpdateForm({
-                    validityDays: Math.max(1, Number(e.target.value) || 15),
+                    validityDays: Math.max(1, Number(e.target.value) || 30),
                   })
                 }
                 className="w-full px-2.5 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
@@ -512,7 +512,9 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
 
         {/* 4 Structural Systems from Website */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-4">
-          {(Object.keys(SYSTEM_META) as SystemType[]).map((sysKey) => {
+          {(Object.keys(SYSTEM_META) as SystemType[])
+            .filter((sysKey) => sysKey !== 'press_economy')
+            .map((sysKey) => {
             const meta = SYSTEM_META[sysKey];
             const selected = form.system === sysKey;
             return (
