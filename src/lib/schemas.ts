@@ -89,7 +89,7 @@ export const OfferFormStateSchema = z.object({
       'etalbond',
     ])
     .default('panel_smooth'),
-  wallHeightKey: z.enum(['250', '280', '300']).default('250'),
+  wallHeightKey: z.enum(['250', '280', '300', 'custom']).default('250'),
   ceilingInsulKey: z.enum(['80', '160']).default('80'),
   extWallCm: z.number().positive().optional(),
   intWallCm: z.number().positive().optional(),

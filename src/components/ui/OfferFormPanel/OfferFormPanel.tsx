@@ -1105,9 +1105,13 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
               id="wallHeightKey"
               aria-label={T.wallHeightLabel}
               value={form.wallHeightKey}
-              onChange={(e) =>
-                onUpdateForm({ wallHeightKey: e.target.value as WallHeightKey })
-              }
+              onChange={(e) => {
+                const nextKey = e.target.value as WallHeightKey;
+                onUpdateForm({
+                  wallHeightKey: nextKey,
+                  ...(nextKey !== 'custom' ? { wallHeightCustomText: '' } : {}),
+                });
+              }}
               className="w-full px-3 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
             >
               {WALL_HEIGHT_OPTIONS.map((h) => (
@@ -1116,21 +1120,29 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
                 </option>
               ))}
             </select>
-            <input
-              id="wallHeightCustomText"
-              type="text"
-              aria-label={lang === 'bg' ? 'Ръчна височина на стените (см)' : 'Manual wall height (cm)'}
-              value={form.wallHeightCustomText ?? ''}
-              onChange={(e) =>
-                onUpdateForm({ wallHeightCustomText: e.target.value })
-              }
-              placeholder={
-                lang === 'bg'
-                  ? 'Ръчна височина в см (напр. 270) — по избор...'
-                  : 'Manual height in cm (e.g. 270) — optional...'
-              }
-              className="mt-1.5 w-full px-3 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
-            />
+            {(form.wallHeightKey === 'custom' ||
+              Boolean(form.wallHeightCustomText?.trim())) && (
+              <input
+                id="wallHeightCustomText"
+                type="text"
+                autoFocus={form.wallHeightKey === 'custom'}
+                aria-label={
+                  lang === 'bg'
+                    ? 'Ръчна височина на стените (см)'
+                    : 'Manual wall height (cm)'
+                }
+                value={form.wallHeightCustomText ?? ''}
+                onChange={(e) =>
+                  onUpdateForm({ wallHeightCustomText: e.target.value })
+                }
+                placeholder={
+                  lang === 'bg'
+                    ? 'Въведете височина в см (напр. 270)...'
+                    : 'Enter height in cm (e.g. 270)...'
+                }
+                className="mt-1.5 w-full px-3 py-1.5 text-sm rounded-lg border border-indigo-400 dark:border-indigo-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
+              />
+            )}
           </div>
 
           <div className="sm:col-span-2">

@@ -37,7 +37,7 @@ export type FacadeKey =
   | 'white_plaster'
   | 'insul_10cm'
   | 'etalbond';
-export type WallHeightKey = '250' | '280' | '300';
+export type WallHeightKey = '250' | '280' | '300' | 'custom';
 export type CeilingInsulKey = '80' | '160';
 export type PermitStatusKey = 'has' | 'process' | 'none' | 'unknown';
 

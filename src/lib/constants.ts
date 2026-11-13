@@ -682,6 +682,14 @@ export const WALL_HEIGHT_OPTIONS: Array<{
     },
     docVal: { bg: '300 см (по избор)', en: '300 cm (optional)' },
   },
+  {
+    key: 'custom',
+    label: {
+      bg: 'Друга височина (ръчно въвеждане)',
+      en: 'Custom height (manual entry)',
+    },
+    docVal: { bg: 'По заявка', en: 'Custom' },
+  },
 ];
 
 export const CEILING_INSUL_OPTIONS: Array<{
