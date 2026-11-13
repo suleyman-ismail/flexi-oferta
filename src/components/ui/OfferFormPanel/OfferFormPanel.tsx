@@ -1117,16 +1117,17 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
               ))}
             </select>
             <input
+              id="wallHeightCustomText"
               type="text"
-              aria-label={lang === 'bg' ? 'Свободен текст за височина на стените (по избор)' : 'Custom wall height text (optional)'}
+              aria-label={lang === 'bg' ? 'Ръчна височина на стените (см)' : 'Manual wall height (cm)'}
               value={form.wallHeightCustomText ?? ''}
               onChange={(e) =>
                 onUpdateForm({ wallHeightCustomText: e.target.value })
               }
               placeholder={
                 lang === 'bg'
-                  ? 'Свободен текст за височина (по избор)...'
-                  : 'Custom wall height (optional)...'
+                  ? 'Ръчна височина в см (напр. 270) — по избор...'
+                  : 'Manual height in cm (e.g. 270) — optional...'
               }
               className="mt-1.5 w-full px-3 py-1.5 text-sm rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-indigo-600"
             />
@@ -1419,23 +1420,34 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
             </strong>
           </div>
         )}
-        <div className="border-t border-indigo-800/80 pt-2 mt-2 space-y-1">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-indigo-200">{T.sumShellPlusFnd}</span>
-            <span className="font-bold text-white text-sm">
-              ≈ {formatEur(calc.structurePlusFoundationTotal)}
-            </span>
-          </div>
-          {calc.hasTurnkey && (
-            <div className="flex items-center justify-between text-xs bg-indigo-900/80 px-2.5 py-1.5 rounded-lg">
-              <span className="font-semibold text-emerald-200">
-                {T.sumGrandTurnkey}
-              </span>
-              <span className="font-extrabold text-emerald-300 text-base">
-                ≈ {formatEur(calc.grandTotalWithTurnkey)}
+        <div className="border-t border-indigo-800/80 pt-2 mt-2 space-y-1.5">
+          {calc.hasTurnkey && form.includeFoundation && (
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-indigo-200">{T.sumShellPlusFnd}</span>
+              <span className="font-bold text-white text-sm">
+                ≈ {formatEur(calc.structurePlusFoundationTotal)}
               </span>
             </div>
           )}
+          <div className="flex items-center justify-between text-xs bg-indigo-900/90 px-2.5 py-2 rounded-lg">
+            <span className="font-semibold text-emerald-200">
+              {calc.hasTurnkey && form.includeFoundation
+                ? T.sumGrandTurnkey
+                : calc.hasTurnkey
+                ? lang === 'bg'
+                  ? 'Обща сума (Конструкция + До ключ):'
+                  : 'Grand Total (Structure + Turnkey):'
+                : form.includeFoundation
+                ? T.sumShellPlusFnd
+                : lang === 'bg'
+                ? 'Обща договорна стойност (Конструкция):'
+                : 'Total Contract Value (Structure):'}
+            </span>
+            <span className="font-extrabold text-emerald-300 text-base whitespace-nowrap ml-2">
+              {form.includeFoundation ? '≈ ' : ''}
+              {formatEur(calc.grandTotalWithTurnkey)}
+            </span>
+          </div>
         </div>
       </section>
     </div>

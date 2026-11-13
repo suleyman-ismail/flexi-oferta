@@ -136,8 +136,13 @@ export function resolveOptionLabels(form: OfferFormState) {
       form.winCustomText?.trim() ||
       `${winColorObj.docVal[lang]} · ${winProfObj.label[lang]} · ${winGlazeObj.label[lang]}`,
     facadeLabel: form.facadeCustomText?.trim() || facadeObj.docVal[lang],
-    wallHeightLabel:
-      form.wallHeightCustomText?.trim() || wallHObj.docVal[lang],
+    wallHeightLabel: (() => {
+      const raw = form.wallHeightCustomText?.trim();
+      if (!raw) return wallHObj.docVal[lang];
+      return /^\d+([.,]\d+)?$/.test(raw)
+        ? `${raw} ${lang === 'bg' ? 'см' : 'cm'}`
+        : raw;
+    })(),
     ceilingLabel:
       form.ceilingCustomText?.trim() || ceilingObj.docVal[lang],
     permitLabel: permitObj.label[lang],
