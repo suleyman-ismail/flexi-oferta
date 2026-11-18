@@ -182,26 +182,6 @@ export default function HomePage() {
               }
               return res;
             }}
-            onRegisterProfile={({ name, pin, phone }) => {
-              const created = addOrUpdateUser({
-                name,
-                pin,
-                phone: phone || '',
-                role: 'agent',
-                active: true,
-              });
-              if (!created.ok) return created;
-              const loginRes = loginWithPin(pin);
-              if (loginRes.ok && loginRes.user) {
-                showToast(
-                  'success',
-                  lang === 'bg'
-                    ? `Профилът е създаден! Добре дошли, ${loginRes.user.name}!`
-                    : `Profile created! Welcome, ${loginRes.user.name}!`
-                );
-              }
-              return loginRes;
-            }}
           />
         </div>
       </div>

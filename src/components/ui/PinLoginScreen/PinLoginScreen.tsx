@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Delete, ShieldCheck, Lock, UserPlus, ArrowLeft } from 'lucide-react';
+import { Delete, ShieldCheck, Lock } from 'lucide-react';
 import { AppLang, UserProfile } from '@/types/offer';
 
 export interface PinLoginScreenProps {
@@ -14,16 +14,6 @@ export interface PinLoginScreenProps {
     errorBg?: string;
     errorEn?: string;
   };
-  onRegisterProfile?: (payload: {
-    name: string;
-    pin: string;
-    phone?: string;
-  }) => {
-    ok: boolean;
-    user?: UserProfile;
-    errorBg?: string;
-    errorEn?: string;
-  };
 }
 
 export const PinLoginScreen: React.FC<PinLoginScreenProps> = ({
@@ -31,13 +21,8 @@ export const PinLoginScreen: React.FC<PinLoginScreenProps> = ({
   noticeMsg,
   onSetLang,
   onLoginWithPin,
-  onRegisterProfile,
 }) => {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [pin, setPin] = useState('');
-  const [regName, setRegName] = useState('');
-  const [regPhone, setRegPhone] = useState('');
-  const [regPin, setRegPin] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const pinRef = useRef('');
 
@@ -86,7 +71,6 @@ export const PinLoginScreen: React.FC<PinLoginScreenProps> = ({
   }, []);
 
   useEffect(() => {
-    if (mode !== 'login') return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key >= '0' && e.key <= '9') {
         handleDigit(e.key);
@@ -98,26 +82,7 @@ export const PinLoginScreen: React.FC<PinLoginScreenProps> = ({
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [mode, handleDigit, handleBackspace, handleClear]);
-
-  const handleRegisterSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!onRegisterProfile) return;
-    const res = onRegisterProfile({
-      name: regName,
-      pin: regPin,
-      phone: regPhone,
-    });
-    if (!res.ok) {
-      setErrorMsg(
-        lang === 'en'
-          ? res.errorEn || 'Could not create profile'
-          : res.errorBg || 'Грешка при създаване на профил'
-      );
-      return;
-    }
-    setErrorMsg('');
-  };
+  }, [handleDigit, handleBackspace, handleClear]);
 
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
@@ -194,163 +159,65 @@ export const PinLoginScreen: React.FC<PinLoginScreenProps> = ({
           </div>
         )}
 
-        {mode === 'login' ? (
-          <>
-            {/* 6 PIN Dots */}
-            <div
-              className="flex gap-3.5 mb-6"
-              aria-label={
-                lang === 'bg'
-                  ? `Въведени цифри: ${pin.length} от 6`
-                  : `Entered digits: ${pin.length} of 6`
-              }
-            >
-              {[0, 1, 2, 3, 4, 5].map((i) => (
-                <span
-                  key={i}
-                  className={`w-4 h-4 rounded-full border-2 transition-all duration-150 ${
-                    pin.length > i
-                      ? 'bg-indigo-400 border-indigo-300 scale-110 shadow-[0_0_12px_rgba(129,140,248,0.8)]'
-                      : 'bg-transparent border-white/40'
-                  }`}
-                />
-              ))}
-            </div>
+        {/* 6 PIN Dots */}
+        <div
+          className="flex gap-3.5 mb-6"
+          aria-label={
+            lang === 'bg'
+              ? `Въведени цифри: ${pin.length} от 6`
+              : `Entered digits: ${pin.length} of 6`
+          }
+        >
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <span
+              key={i}
+              className={`w-4 h-4 rounded-full border-2 transition-all duration-150 ${
+                pin.length > i
+                  ? 'bg-indigo-400 border-indigo-300 scale-110 shadow-[0_0_12px_rgba(129,140,248,0.8)]'
+                  : 'bg-transparent border-white/40'
+              }`}
+            />
+          ))}
+        </div>
 
-            {/* Numpad */}
-            <div className="grid grid-cols-3 gap-3.5 w-full max-w-[270px]">
-              {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => handleDigit(d)}
-                  aria-label={`Digit ${d}`}
-                  className="h-16 rounded-2xl bg-white/10 hover:bg-indigo-600/50 active:bg-indigo-500 border border-white/10 text-2xl font-bold tabular-nums transition shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                >
-                  {d}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={handleClear}
-                aria-label={lang === 'bg' ? 'Изчисти PIN' : 'Clear PIN'}
-                className="h-16 rounded-2xl bg-white/5 hover:bg-white/15 border border-white/10 text-xs font-bold uppercase tracking-wider text-zinc-300 transition cursor-pointer"
-              >
-                {lang === 'bg' ? 'Изчисти' : 'Clear'}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDigit('0')}
-                aria-label="Digit 0"
-                className="h-16 rounded-2xl bg-white/10 hover:bg-indigo-600/50 active:bg-indigo-500 border border-white/10 text-2xl font-bold tabular-nums transition shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              >
-                0
-              </button>
-              <button
-                type="button"
-                onClick={handleBackspace}
-                aria-label={lang === 'bg' ? 'Изтрий цифра' : 'Delete digit'}
-                className="h-16 rounded-2xl bg-white/5 hover:bg-white/15 border border-white/10 flex items-center justify-center transition cursor-pointer"
-              >
-                <Delete className="w-6 h-6 text-zinc-200" />
-              </button>
-            </div>
-
-            {onRegisterProfile && (
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('register');
-                  setErrorMsg('');
-                }}
-                aria-label={
-                  lang === 'bg'
-                    ? 'Създай свой профил и PIN'
-                    : 'Create your profile & PIN'
-                }
-                className="mt-5 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-xs font-bold text-indigo-200 transition cursor-pointer"
-              >
-                <UserPlus className="w-3.5 h-3.5 text-indigo-300" />
-                {lang === 'bg'
-                  ? 'Създай свой профил и PIN на това устройство'
-                  : 'Create your profile & PIN on this device'}
-              </button>
-            )}
-          </>
-        ) : (
-          <form
-            onSubmit={handleRegisterSubmit}
-            className="w-full max-w-xs space-y-3 bg-white/5 border border-white/15 rounded-2xl p-4"
-          >
-            <div className="text-xs font-bold text-indigo-200 text-center mb-1">
-              {lang === 'bg'
-                ? 'Въведете своето име и личен 6-цифрен PIN код'
-                : 'Enter your name and personal 6-digit PIN'}
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-zinc-300 mb-1">
-                {lang === 'bg' ? 'Име и фамилия *' : 'Full Name *'}
-              </label>
-              <input
-                type="text"
-                required
-                value={regName}
-                onChange={(e) => setRegName(e.target.value)}
-                placeholder={
-                  lang === 'bg' ? 'напр. Иван Георгиев' : 'e.g. Ivan Georgiev'
-                }
-                className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-zinc-300 mb-1">
-                {lang === 'bg' ? 'Телефон (по избор)' : 'Phone (optional)'}
-              </label>
-              <input
-                type="tel"
-                value={regPhone}
-                onChange={(e) => setRegPhone(e.target.value)}
-                placeholder="+359 888 ..."
-                className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-sm text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-zinc-300 mb-1">
-                {lang === 'bg' ? '6-цифрен PIN код *' : '6-digit PIN code *'}
-              </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="\d{6}"
-                maxLength={6}
-                required
-                value={regPin}
-                onChange={(e) =>
-                  setRegPin(e.target.value.replace(/\D/g, '').slice(0, 6))
-                }
-                placeholder="654321"
-                className="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-sm font-mono tracking-widest text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              />
-            </div>
+        {/* Numpad */}
+        <div className="grid grid-cols-3 gap-3.5 w-full max-w-[270px]">
+          {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((d) => (
             <button
-              type="submit"
-              className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-extrabold transition cursor-pointer"
-            >
-              {lang === 'bg' ? 'Запази профила и влез' : 'Save Profile & Sign In'}
-            </button>
-            <button
+              key={d}
               type="button"
-              onClick={() => {
-                setMode('login');
-                setErrorMsg('');
-              }}
-              className="w-full py-1.5 inline-flex items-center justify-center gap-1 text-xs font-semibold text-zinc-300 hover:text-white transition cursor-pointer"
+              onClick={() => handleDigit(d)}
+              aria-label={`Digit ${d}`}
+              className="h-16 rounded-2xl bg-white/10 hover:bg-indigo-600/50 active:bg-indigo-500 border border-white/10 text-2xl font-bold tabular-nums transition shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400"
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              {lang === 'bg' ? 'Назад към PIN вход' : 'Back to PIN login'}
+              {d}
             </button>
-          </form>
-        )}
+          ))}
+          <button
+            type="button"
+            onClick={handleClear}
+            aria-label={lang === 'bg' ? 'Изчисти PIN' : 'Clear PIN'}
+            className="h-16 rounded-2xl bg-white/5 hover:bg-white/15 border border-white/10 text-xs font-bold uppercase tracking-wider text-zinc-300 transition cursor-pointer"
+          >
+            {lang === 'bg' ? 'Изчисти' : 'Clear'}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleDigit('0')}
+            aria-label="Digit 0"
+            className="h-16 rounded-2xl bg-white/10 hover:bg-indigo-600/50 active:bg-indigo-500 border border-white/10 text-2xl font-bold tabular-nums transition shadow-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400"
+          >
+            0
+          </button>
+          <button
+            type="button"
+            onClick={handleBackspace}
+            aria-label={lang === 'bg' ? 'Изтрий цифра' : 'Delete digit'}
+            className="h-16 rounded-2xl bg-white/5 hover:bg-white/15 border border-white/10 flex items-center justify-center transition cursor-pointer"
+          >
+            <Delete className="w-6 h-6 text-zinc-200" />
+          </button>
+        </div>
 
         {/* Error Feedback */}
         <div
