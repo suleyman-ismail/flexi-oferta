@@ -58,6 +58,7 @@ export const PwaInstallBanner: React.FC<PwaInstallBannerProps> = ({ lang }) => {
       }
     };
 
+    let swInterval: ReturnType<typeof setInterval> | undefined;
     if ('serviceWorker' in navigator) {
       const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
       navigator.serviceWorker.addEventListener(
@@ -65,12 +66,22 @@ export const PwaInstallBanner: React.FC<PwaInstallBannerProps> = ({ lang }) => {
         handleControllerChange
       );
       document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('focus', checkForUpdates);
       window.addEventListener('online', checkForUpdates);
+
+      swInterval = setInterval(() => {
+        if (document.visibilityState === 'visible' && navigator.onLine) {
+          checkForUpdates();
+        }
+      }, 60_000);
 
       navigator.serviceWorker
         .register(`${basePath}/sw.js`, { updateViaCache: 'none' })
         .then((reg) => {
           swReg = reg;
+          if (reg.waiting) {
+            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+          }
           checkForUpdates();
         })
         .catch(() => {
@@ -85,6 +96,7 @@ export const PwaInstallBanner: React.FC<PwaInstallBannerProps> = ({ lang }) => {
     setIsStandalone(Boolean(standalone));
 
     const cleanupSwListeners = () => {
+      if (swInterval) clearInterval(swInterval);
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.removeEventListener(
           'controllerchange',
@@ -92,6 +104,7 @@ export const PwaInstallBanner: React.FC<PwaInstallBannerProps> = ({ lang }) => {
         );
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', checkForUpdates);
       window.removeEventListener('online', checkForUpdates);
     };
 

@@ -1,5 +1,5 @@
-// Flexi Home ОФЕРТА Studio v1.0.1 – Auto-Updating Offline-First Service Worker
-const CACHE = 'flexi-oferta-v101';
+// Flexi Home ОФЕРТА Studio v1.0.2 – Auto-Updating Offline-First Service Worker
+const CACHE = 'flexi-oferta-v102';
 const SHELL = [
   './',
   'index.html',
@@ -22,6 +22,12 @@ self.addEventListener('install', (e) => {
       )
       .then(() => self.skipWaiting())
   );
+});
+
+self.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('activate', (e) => {
