@@ -13,6 +13,7 @@ import { SavedOffersDrawer } from '@/components/ui/SavedOffersDrawer/SavedOffers
 import { PwaInstallBanner } from '@/components/ui/PwaInstallBanner/PwaInstallBanner';
 import { PinLoginScreen } from '@/components/ui/PinLoginScreen/PinLoginScreen';
 import { AdminDashboardModal } from '@/components/ui/AdminDashboardModal/AdminDashboardModal';
+import { parseProfileInviteFromUrl } from '@/lib/profileInvite';
 
 export default function HomePage() {
   const {
@@ -25,6 +26,7 @@ export default function HomePage() {
     loginWithPin,
     logout,
     addOrUpdateUser,
+    upsertInvitedUser,
     deleteUser,
     toggleUserActive,
     selectCatalogModel,
@@ -45,6 +47,7 @@ export default function HomePage() {
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [isSavedDrawerOpen, setIsSavedDrawerOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [inviteNotice, setInviteNotice] = useState<string>('');
   const [toast, setToast] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -52,7 +55,18 @@ export default function HomePage() {
 
   useEffect(() => {
     setHydrated(true);
-  }, []);
+    const invited = parseProfileInviteFromUrl(
+      window.location.search,
+      window.location.hash
+    );
+    if (invited) {
+      upsertInvitedUser(invited);
+      window.history.replaceState({}, '', window.location.pathname);
+      setInviteNotice(
+        `Профилът за ${invited.name} е активиран на това устройство! Въведете Вашия 6-цифрен PIN код.`
+      );
+    }
+  }, [upsertInvitedUser]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -154,6 +168,7 @@ export default function HomePage() {
         <div className="flex-1">
           <PinLoginScreen
             lang={lang}
+            noticeMsg={inviteNotice}
             onSetLang={setLang}
             onLoginWithPin={(pin) => {
               const res = loginWithPin(pin);

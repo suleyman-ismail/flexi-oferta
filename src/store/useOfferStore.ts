@@ -105,7 +105,8 @@ interface OfferStoreState {
   logout: () => void;
   addOrUpdateUser: (
     user: Omit<UserProfile, 'id' | 'createdAt'> & { id?: string }
-  ) => { ok: boolean; errorBg?: string; errorEn?: string };
+  ) => { ok: boolean; user?: UserProfile; errorBg?: string; errorEn?: string };
+  upsertInvitedUser: (user: UserProfile) => void;
   deleteUser: (id: string) => void;
   toggleUserActive: (id: string) => void;
   selectCatalogModel: (modelId: string) => void;
@@ -160,7 +161,7 @@ export const useOfferStore = create<OfferStoreState>()(
         }),
 
       loginWithPin: (pin) => {
-        const cleanPin = (pin || '').trim();
+        const cleanPin = (pin || '').replace(/\s+/g, '').trim();
         const { users } = get();
         const found = users.find((u) => u.pin === cleanPin);
         if (!found) {
@@ -213,23 +214,23 @@ export const useOfferStore = create<OfferStoreState>()(
           };
         }
 
+        let savedUser: UserProfile;
         if (payload.id) {
+          const existing = users.find((u) => u.id === payload.id);
+          savedUser = {
+            id: payload.id,
+            name: cleanName,
+            pin: cleanPin,
+            role: payload.role,
+            phone: payload.phone || '',
+            active: payload.active,
+            createdAt: existing?.createdAt || new Date().toISOString(),
+          };
           set({
-            users: users.map((u) =>
-              u.id === payload.id
-                ? {
-                    ...u,
-                    name: cleanName,
-                    pin: cleanPin,
-                    role: payload.role,
-                    phone: payload.phone || '',
-                    active: payload.active,
-                  }
-                : u
-            ),
+            users: users.map((u) => (u.id === payload.id ? savedUser : u)),
           });
         } else {
-          const newUser: UserProfile = {
+          savedUser = {
             id: `user-${Date.now()}`,
             name: cleanName,
             pin: cleanPin,
@@ -238,11 +239,24 @@ export const useOfferStore = create<OfferStoreState>()(
             active: payload.active,
             createdAt: new Date().toISOString(),
           };
-          set({ users: [...users, newUser] });
+          set({ users: [...users, savedUser] });
         }
 
-        return { ok: true };
+        return { ok: true, user: savedUser };
       },
+
+      upsertInvitedUser: (invited) =>
+        set((state) => {
+          const idx = state.users.findIndex(
+            (u) => u.id === invited.id || u.pin === invited.pin
+          );
+          if (idx >= 0) {
+            const next = [...state.users];
+            next[idx] = { ...next[idx], ...invited };
+            return { users: next };
+          }
+          return { users: [...state.users, invited] };
+        }),
 
       deleteUser: (id) =>
         set((state) => {

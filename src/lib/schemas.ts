@@ -82,6 +82,7 @@ export const OfferFormStateSchema = z.object({
   facadeKey: z
     .enum([
       'panel_smooth',
+      'panel_smooth_unpainted',
       'wood_siding',
       'wood_decor',
       'white_plaster',

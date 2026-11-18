@@ -623,6 +623,17 @@ export const FACADE_OPTIONS: Array<{
     },
   },
   {
+    key: 'panel_smooth_unpainted',
+    label: {
+      bg: 'Фиброциментови панели — гладък (небоядисан)',
+      en: 'Fibre-cement panels — smooth (unpainted)',
+    },
+    docVal: {
+      bg: 'Фиброциментови панели (гладък / небоядисан)',
+      en: 'Fibre-cement panels (smooth / unpainted)',
+    },
+  },
+  {
     key: 'wood_siding',
     label: {
       bg: 'Дървесен сайдинг (формован във фиброцимента)',

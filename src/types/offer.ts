@@ -32,6 +32,7 @@ export type WinProfileKey = 'pvc_5ch' | 'pvc_6ch' | 'pvc_7ch' | 'alu_thermal';
 export type WinGlazingKey = 'double' | 'triple' | 'double_frosted';
 export type FacadeKey =
   | 'panel_smooth'
+  | 'panel_smooth_unpainted'
   | 'wood_siding'
   | 'wood_decor'
   | 'white_plaster'

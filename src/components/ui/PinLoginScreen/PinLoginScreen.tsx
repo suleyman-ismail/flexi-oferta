@@ -6,6 +6,7 @@ import { AppLang, UserProfile } from '@/types/offer';
 
 export interface PinLoginScreenProps {
   lang: AppLang;
+  noticeMsg?: string;
   onSetLang: (lang: AppLang) => void;
   onLoginWithPin: (pin: string) => {
     ok: boolean;
@@ -17,6 +18,7 @@ export interface PinLoginScreenProps {
 
 export const PinLoginScreen: React.FC<PinLoginScreenProps> = ({
   lang,
+  noticeMsg,
   onSetLang,
   onLoginWithPin,
 }) => {
@@ -150,6 +152,12 @@ export const PinLoginScreen: React.FC<PinLoginScreenProps> = ({
             ? 'Въведете своя личен 6-цифрен PIN код'
             : 'Enter your personal 6-digit PIN code'}
         </p>
+
+        {noticeMsg && (
+          <div className="mb-4 px-3.5 py-2 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-100 text-xs font-semibold text-center max-w-xs">
+            {noticeMsg}
+          </div>
+        )}
 
         {/* 6 PIN Dots */}
         <div

@@ -20,6 +20,7 @@ import {
   UserX,
   Download,
   Upload,
+  Link2,
 } from 'lucide-react';
 import { AppLang, SavedOffer, UserProfile, UserRole } from '@/types/offer';
 import { SYSTEM_META, TURNKEY_META } from '@/lib/constants';
@@ -29,6 +30,7 @@ import {
   setOfferSequenceValue,
 } from '@/lib/pricingEngine';
 import { formatBgDate } from '@/lib/pdfGenerator';
+import { buildProfileInviteUrl } from '@/lib/profileInvite';
 
 export interface AdminDashboardModalProps {
   lang: AppLang;
@@ -39,7 +41,7 @@ export interface AdminDashboardModalProps {
   onClose: () => void;
   onAddOrUpdateUser: (
     user: Omit<UserProfile, 'id' | 'createdAt'> & { id?: string }
-  ) => { ok: boolean; errorBg?: string; errorEn?: string };
+  ) => { ok: boolean; user?: UserProfile; errorBg?: string; errorEn?: string };
   onDeleteUser: (id: string) => void;
   onToggleUserActive: (id: string) => void;
   onLoadOffer: (id: string, asCopy?: boolean) => void;
@@ -141,6 +143,27 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
     setUserActive(true);
   };
 
+  const handleCopyInviteLink = async (u: UserProfile) => {
+    const url = buildProfileInviteUrl(u);
+    try {
+      await navigator.clipboard.writeText(url);
+      setFeedback({
+        type: 'success',
+        message:
+          lang === 'en'
+            ? `Access link for ${u.name} copied! Send it to their phone/browser so their PIN (${u.pin}) works on their device.`
+            : `Линкът за достъп на ${u.name} е копиран! Изпратете го на телефона/браузъра им, за да се активира PIN кодът (${u.pin}) на тяхното устройство.`,
+      });
+    } catch {
+      setFeedback({
+        type: 'success',
+        message: `${
+          lang === 'en' ? 'Access link' : 'Линк за достъп'
+        }: ${url}`,
+      });
+    }
+  };
+
   const handleSaveUser = (e: React.FormEvent) => {
     e.preventDefault();
     const res = onAddOrUpdateUser({
@@ -165,8 +188,8 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
       type: 'success',
       message:
         lang === 'en'
-          ? 'User profile & PIN saved successfully!'
-          : 'Профилът и PIN кодът са запазени успешно!',
+          ? 'User profile & PIN saved! Click "Access Link" next to the user to activate this PIN on another phone/device.'
+          : 'Профилът и PIN кодът са запазени! Натиснете „Линк за достъп“ до профила, за да активирате този PIN и на друг телефон/устройство.',
     });
     resetUserForm();
   };
@@ -746,7 +769,16 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex flex-wrap items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleCopyInviteLink(u)}
+                          aria-label={`Copy access link ${u.name}`}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition cursor-pointer"
+                        >
+                          <Link2 className="w-3.5 h-3.5" />
+                          {lang === 'bg' ? 'Линк за достъп' : 'Access Link'}
+                        </button>
                         <button
                           type="button"
                           onClick={() => startEditUser(u)}
