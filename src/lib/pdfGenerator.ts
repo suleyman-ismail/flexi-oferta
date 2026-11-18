@@ -44,27 +44,14 @@ export function formatBgDate(isoDate: string, lang: 'bg' | 'en' = 'bg'): string 
     : `${parts[2]}.${parts[1]}.${parts[0]} г.`;
 }
 
-export async function generateBulgarianOfferPdf(
+export function buildBulgarianOfferDocDefinition(
   form: OfferFormState,
-  calc: CalculatedOffer
-): Promise<void> {
-  const pdfMakeModule = await import('pdfmake/build/pdfmake');
-  const pdfFontsModule = await import('pdfmake/build/vfs_fonts');
-
+  calc: CalculatedOffer,
+  logoDataUrl: string | null = null
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfMake: any = pdfMakeModule.default || pdfMakeModule;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const pdfFonts: any = pdfFontsModule.default || pdfFontsModule;
-
-  if (pdfFonts && pdfFonts.pdfMake && pdfFonts.pdfMake.vfs) {
-    pdfMake.vfs = pdfFonts.pdfMake.vfs;
-  } else if (pdfFonts && pdfFonts.vfs) {
-    pdfMake.vfs = pdfFonts.vfs;
-  }
-
+): any {
   const lang = form.lang || 'bg';
   const isEn = lang === 'en';
-  const logoDataUrl = await fetchLogoBase64();
   const dateFormatted = formatBgDate(form.date, lang);
   const R = calc.resolvedLabels;
 
@@ -1343,6 +1330,29 @@ export async function generateBulgarianOfferPdf(
     ],
   };
 
+  return docDefinition;
+}
+
+export async function generateBulgarianOfferPdf(
+  form: OfferFormState,
+  calc: CalculatedOffer
+): Promise<void> {
+  const pdfMakeModule = await import('pdfmake/build/pdfmake');
+  const pdfFontsModule = await import('pdfmake/build/vfs_fonts');
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdfMake: any = pdfMakeModule.default || pdfMakeModule;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdfFonts: any = pdfFontsModule.default || pdfFontsModule;
+
+  if (pdfFonts && pdfFonts.pdfMake && pdfFonts.pdfMake.vfs) {
+    pdfMake.vfs = pdfFonts.pdfMake.vfs;
+  } else if (pdfFonts && pdfFonts.vfs) {
+    pdfMake.vfs = pdfFonts.vfs;
+  }
+
+  const logoDataUrl = await fetchLogoBase64();
+  const docDefinition = buildBulgarianOfferDocDefinition(form, calc, logoDataUrl);
   const filename = formatOfferFilename(form);
   pdfMake.createPdf(docDefinition).download(filename);
 }

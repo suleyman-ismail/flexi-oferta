@@ -2,9 +2,14 @@
   "name": "flexi-home-oferta",
   "version": "1.0.0",
   "private": true,
+  "bin": {
+    "flexi-oferta": "./dist/cli.mjs",
+    "flexi-oferta-server": "./dist/server.mjs"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:cli": "esbuild src/cli/index.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/cli.mjs && esbuild src/cli/server.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/server.mjs && chmod +x dist/cli.mjs dist/server.mjs",
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run"
