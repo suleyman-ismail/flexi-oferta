@@ -11,6 +11,15 @@ import {
 } from '@/lib/pricingEngine';
 import { BackupPayloadSchema } from '@/lib/schemas';
 import {
+  deleteOfferFromCloud,
+  deleteUserFromCloud,
+  pushCounterToCloud,
+  pushFullSnapshotToCloud,
+  pushOfferToCloud,
+  pushPricingToCloud,
+  pushUserToCloud,
+} from '@/lib/cloudSync';
+import {
   AppLang,
   OfferFormState,
   PricingConfig,
@@ -119,6 +128,9 @@ interface OfferStoreState {
   deleteSavedOffer: (id: string) => void;
   exportBackupJson: () => string;
   importBackupJson: (rawJson: string) => { ok: boolean; message: string };
+  applyCloudUsers: (users: UserProfile[]) => void;
+  applyCloudOffers: (offers: SavedOffer[]) => void;
+  applyCloudPricingConfig: (config: PricingConfig) => void;
 }
 
 export const useOfferStore = create<OfferStoreState>()(
@@ -242,10 +254,11 @@ export const useOfferStore = create<OfferStoreState>()(
           set({ users: [...users, savedUser] });
         }
 
+        void pushUserToCloud(savedUser);
         return { ok: true, user: savedUser };
       },
 
-      upsertInvitedUser: (invited) =>
+      upsertInvitedUser: (invited) => {
         set((state) => {
           const idx = state.users.findIndex(
             (u) => u.id === invited.id || u.pin === invited.pin
@@ -256,39 +269,40 @@ export const useOfferStore = create<OfferStoreState>()(
             return { users: next };
           }
           return { users: [...state.users, invited] };
-        }),
+        });
+        void pushUserToCloud(invited);
+      },
 
-      deleteUser: (id) =>
-        set((state) => {
-          const remaining = state.users.filter((u) => u.id !== id);
-          // Always ensure at least one admin exists
-          if (!remaining.some((u) => u.role === 'admin' && u.active)) {
-            return state;
-          }
-          return {
-            users: remaining,
-            currentUserId:
-              state.currentUserId === id ? null : state.currentUserId,
-          };
-        }),
+      deleteUser: (id) => {
+        const state = get();
+        const remaining = state.users.filter((u) => u.id !== id);
+        if (!remaining.some((u) => u.role === 'admin' && u.active)) {
+          return;
+        }
+        set({
+          users: remaining,
+          currentUserId:
+            state.currentUserId === id ? null : state.currentUserId,
+        });
+        void deleteUserFromCloud(id);
+      },
 
-      toggleUserActive: (id) =>
-        set((state) => {
-          const target = state.users.find((u) => u.id === id);
-          if (!target) return state;
-          // Prevent deactivating the last active admin
-          if (target.role === 'admin' && target.active) {
-            const otherActiveAdmins = state.users.filter(
-              (u) => u.id !== id && u.role === 'admin' && u.active
-            );
-            if (otherActiveAdmins.length === 0) return state;
-          }
-          return {
-            users: state.users.map((u) =>
-              u.id === id ? { ...u, active: !u.active } : u
-            ),
-          };
-        }),
+      toggleUserActive: (id) => {
+        const state = get();
+        const target = state.users.find((u) => u.id === id);
+        if (!target) return;
+        if (target.role === 'admin' && target.active) {
+          const otherActiveAdmins = state.users.filter(
+            (u) => u.id !== id && u.role === 'admin' && u.active
+          );
+          if (otherActiveAdmins.length === 0) return;
+        }
+        const updatedUser = { ...target, active: !target.active };
+        set({
+          users: state.users.map((u) => (u.id === id ? updatedUser : u)),
+        });
+        void pushUserToCloud(updatedUser);
+      },
 
       selectCatalogModel: (modelId) =>
         set((state) => {
@@ -360,10 +374,15 @@ export const useOfferStore = create<OfferStoreState>()(
           activeOfferId: null,
         })),
 
-      updatePricingConfig: (config) => set({ pricingConfig: config }),
+      updatePricingConfig: (config) => {
+        set({ pricingConfig: config });
+        void pushPricingToCloud(config);
+      },
 
-      resetPricingConfig: () =>
-        set({ pricingConfig: DEFAULT_PRICING_CONFIG }),
+      resetPricingConfig: () => {
+        set({ pricingConfig: DEFAULT_PRICING_CONFIG });
+        void pushPricingToCloud(DEFAULT_PRICING_CONFIG);
+      },
 
       saveCurrentOffer: () => {
         const {
@@ -452,6 +471,9 @@ export const useOfferStore = create<OfferStoreState>()(
           activeOfferId: savedRecord.id,
         });
 
+        void pushOfferToCloud(savedRecord);
+        void pushCounterToCloud(getOfferSequenceValue());
+
         return savedRecord;
       },
 
@@ -478,12 +500,14 @@ export const useOfferStore = create<OfferStoreState>()(
         }
       },
 
-      deleteSavedOffer: (id) =>
+      deleteSavedOffer: (id) => {
         set((state) => ({
           savedOffers: state.savedOffers.filter((o) => o.id !== id),
           activeOfferId:
             state.activeOfferId === id ? null : state.activeOfferId,
-        })),
+        }));
+        void deleteOfferFromCloud(id);
+      },
 
       exportBackupJson: () => {
         const { pricingConfig, savedOffers, users } = get();
@@ -517,13 +541,22 @@ export const useOfferStore = create<OfferStoreState>()(
             setOfferSequenceValue(validated.data.lastOfferSeq);
           }
 
-          set((state) => ({
+          const nextUsers = validated.data.users?.length
+            ? validated.data.users
+            : get().users;
+
+          set({
             pricingConfig: validated.data.pricingConfig,
             savedOffers: validated.data.savedOffers,
-            users: validated.data.users?.length
-              ? validated.data.users
-              : state.users,
-          }));
+            users: nextUsers,
+          });
+
+          void pushFullSnapshotToCloud({
+            users: nextUsers,
+            savedOffers: validated.data.savedOffers,
+            pricingConfig: validated.data.pricingConfig,
+            lastOfferSeq: getOfferSequenceValue(),
+          });
 
           return {
             ok: true,
@@ -542,6 +575,10 @@ export const useOfferStore = create<OfferStoreState>()(
           };
         }
       },
+
+      applyCloudUsers: (users) => set({ users }),
+      applyCloudOffers: (offers) => set({ savedOffers: offers }),
+      applyCloudPricingConfig: (config) => set({ pricingConfig: config }),
     }),
     {
       name: 'flexi-home-oferta-storage-v3',

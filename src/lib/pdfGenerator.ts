@@ -3,6 +3,7 @@ import {
   CUSTOMER_RESPONSIBILITY,
 } from './constants';
 import { formatEur, formatValidUntilDate } from './pricingEngine';
+import { buildOfferShareMessage } from './shareLinks';
 import { CalculatedOffer, OfferFormState } from '@/types/offer';
 
 async function fetchLogoBase64(): Promise<string | null> {
@@ -1333,10 +1334,7 @@ export function buildBulgarianOfferDocDefinition(
   return docDefinition;
 }
 
-export async function generateBulgarianOfferPdf(
-  form: OfferFormState,
-  calc: CalculatedOffer
-): Promise<void> {
+async function loadPdfMake() {
   const pdfMakeModule = await import('pdfmake/build/pdfmake');
   const pdfFontsModule = await import('pdfmake/build/vfs_fonts');
 
@@ -1350,9 +1348,93 @@ export async function generateBulgarianOfferPdf(
   } else if (pdfFonts && pdfFonts.vfs) {
     pdfMake.vfs = pdfFonts.vfs;
   }
+  return pdfMake;
+}
 
+export async function generateBulgarianOfferPdfBlob(
+  form: OfferFormState,
+  calc: CalculatedOffer
+): Promise<{ blob: Blob; filename: string }> {
+  const pdfMake = await loadPdfMake();
+  const logoDataUrl = await fetchLogoBase64();
+  const docDefinition = buildBulgarianOfferDocDefinition(form, calc, logoDataUrl);
+  const filename = formatOfferFilename(form);
+
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    try {
+      pdfMake.createPdf(docDefinition).getBlob((result: Blob) => {
+        resolve(result);
+      });
+    } catch (err) {
+      reject(err);
+    }
+  });
+
+  return { blob, filename };
+}
+
+export function triggerBlobDownload(blob: Blob, filename: string): void {
+  if (typeof document === 'undefined' || typeof URL === 'undefined') return;
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export async function generateBulgarianOfferPdf(
+  form: OfferFormState,
+  calc: CalculatedOffer
+): Promise<void> {
+  const pdfMake = await loadPdfMake();
   const logoDataUrl = await fetchLogoBase64();
   const docDefinition = buildBulgarianOfferDocDefinition(form, calc, logoDataUrl);
   const filename = formatOfferFilename(form);
   pdfMake.createPdf(docDefinition).download(filename);
+}
+
+export async function shareBulgarianOfferPdf(
+  form: OfferFormState,
+  calc: CalculatedOffer
+): Promise<'shared' | 'downloaded' | 'cancelled'> {
+  const { blob, filename } = await generateBulgarianOfferPdfBlob(form, calc);
+  const file =
+    typeof File !== 'undefined'
+      ? new File([blob], filename, { type: 'application/pdf' })
+      : null;
+
+  const isEn = form.lang === 'en';
+  const title = isEn
+    ? `Flexi Home Offer No. ${form.offerNo}`
+    : `Flexi Home ОФЕРТА № ${form.offerNo}`;
+  const text = buildOfferShareMessage(form, calc);
+
+  if (
+    file &&
+    typeof navigator !== 'undefined' &&
+    typeof navigator.share === 'function' &&
+    typeof navigator.canShare === 'function' &&
+    navigator.canShare({ files: [file] })
+  ) {
+    try {
+      await navigator.share({
+        title,
+        text,
+        files: [file],
+      });
+      return 'shared';
+    } catch (err) {
+      if ((err as { name?: string })?.name === 'AbortError') {
+        return 'cancelled';
+      }
+      triggerBlobDownload(blob, filename);
+      return 'downloaded';
+    }
+  }
+
+  triggerBlobDownload(blob, filename);
+  return 'downloaded';
 }

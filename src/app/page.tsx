@@ -3,8 +3,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useOfferStore } from '@/store/useOfferStore';
-import { calculateOffer } from '@/lib/pricingEngine';
-import { generateBulgarianOfferPdf } from '@/lib/pdfGenerator';
+import { calculateOffer, getOfferSequenceValue, setOfferSequenceValue } from '@/lib/pricingEngine';
+import {
+  generateBulgarianOfferPdf,
+  shareBulgarianOfferPdf,
+} from '@/lib/pdfGenerator';
 import { StudioHeader } from '@/components/ui/StudioHeader/StudioHeader';
 import { OfferFormPanel } from '@/components/ui/OfferFormPanel/OfferFormPanel';
 import { BulgarianPdfPreview } from '@/components/ui/BulgarianPdfPreview/BulgarianPdfPreview';
@@ -14,6 +17,22 @@ import { PwaInstallBanner } from '@/components/ui/PwaInstallBanner/PwaInstallBan
 import { PinLoginScreen } from '@/components/ui/PinLoginScreen/PinLoginScreen';
 import { AdminDashboardModal } from '@/components/ui/AdminDashboardModal/AdminDashboardModal';
 import { parseProfileInviteFromUrl } from '@/lib/profileInvite';
+import {
+  buildCloudSetupUrl,
+  clearSavedFirebaseConfig,
+  getActiveFirebaseConfig,
+  getEnvFirebaseConfig,
+  parseCloudConfigFromUrl,
+  parseFirebaseConfigInput,
+  saveFirebaseConfig,
+} from '@/lib/firebaseConfig';
+import {
+  CloudSyncStatus,
+  claimNextCloudOfferNumber,
+  pushFullSnapshotToCloud,
+  startCloudSync,
+  stopCloudSync,
+} from '@/lib/cloudSync';
 
 export default function HomePage() {
   const {
@@ -39,15 +58,23 @@ export default function HomePage() {
     deleteSavedOffer,
     exportBackupJson,
     importBackupJson,
+    applyCloudUsers,
+    applyCloudOffers,
+    applyCloudPricingConfig,
   } = useOfferStore();
 
   const [hydrated, setHydrated] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isSharingPdf, setIsSharingPdf] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [isSavedDrawerOpen, setIsSavedDrawerOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [inviteNotice, setInviteNotice] = useState<string>('');
+  const [cloudStatus, setCloudStatus] = useState<CloudSyncStatus>({
+    state: 'local',
+  });
+  const [cloudConfigTick, setCloudConfigTick] = useState(0);
   const [toast, setToast] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -55,18 +82,95 @@ export default function HomePage() {
 
   useEffect(() => {
     setHydrated(true);
+    let urlChanged = false;
     const invited = parseProfileInviteFromUrl(
       window.location.search,
       window.location.hash
     );
     if (invited) {
       upsertInvitedUser(invited);
-      window.history.replaceState({}, '', window.location.pathname);
+      urlChanged = true;
       setInviteNotice(
         `Профилът за ${invited.name} е активиран на това устройство! Въведете Вашия 6-цифрен PIN код.`
       );
     }
+    const cloudCfg = parseCloudConfigFromUrl(
+      window.location.search,
+      window.location.hash
+    );
+    if (cloudCfg) {
+      saveFirebaseConfig(cloudCfg);
+      urlChanged = true;
+      setCloudConfigTick((t) => t + 1);
+      setInviteNotice((prev) =>
+        prev
+          ? `${prev} Облачната синхронизация е активирана.`
+          : 'Облачната синхронизация е активирана на това устройство! Въведете Вашия 6-цифрен PIN код.'
+      );
+    }
+    if (urlChanged) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   }, [upsertInvitedUser]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const cfg = getActiveFirebaseConfig();
+    if (!cfg) {
+      stopCloudSync();
+      setCloudStatus({ state: 'local' });
+      return;
+    }
+
+    let cancelled = false;
+    const state = useOfferStore.getState();
+    let cleanup: (() => void) | undefined;
+
+    startCloudSync(
+      cfg,
+      {
+        users: state.users,
+        savedOffers: state.savedOffers,
+        pricingConfig: state.pricingConfig,
+        lastOfferSeq: getOfferSequenceValue(),
+      },
+      {
+        onUsers: (remoteUsers) => {
+          if (!cancelled) applyCloudUsers(remoteUsers);
+        },
+        onOffers: (remoteOffers) => {
+          if (!cancelled) applyCloudOffers(remoteOffers);
+        },
+        onPricing: (remotePricing) => {
+          if (!cancelled) applyCloudPricingConfig(remotePricing);
+        },
+        onCounter: (remoteSeq) => {
+          if (!cancelled) setOfferSequenceValue(remoteSeq);
+        },
+        onStatus: (nextStatus) => {
+          if (!cancelled) setCloudStatus(nextStatus);
+        },
+      }
+    ).then((fn) => {
+      if (cancelled) {
+        fn();
+      } else {
+        cleanup = fn;
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      if (cleanup) cleanup();
+      else stopCloudSync();
+    };
+  }, [
+    hydrated,
+    cloudConfigTick,
+    applyCloudUsers,
+    applyCloudOffers,
+    applyCloudPricingConfig,
+  ]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -114,14 +218,52 @@ export default function HomePage() {
     );
   };
 
-  const handleNewOffer = () => {
+  const handleNewOffer = async () => {
     resetNewOffer();
+    if (cloudStatus.state === 'synced') {
+      const nextCloudNo = await claimNextCloudOfferNumber();
+      if (nextCloudNo) {
+        updateForm({ offerNo: nextCloudNo });
+      }
+    }
     showToast(
       'success',
       lang === 'bg'
         ? 'Създаден е нов формуляр с автоматичен пореден номер.'
         : 'Created new offer form with automatic sequential number.'
     );
+  };
+
+  const handleSharePdf = async () => {
+    try {
+      setIsSharingPdf(true);
+      const outcome = await shareBulgarianOfferPdf(form, calc);
+      if (outcome === 'shared') {
+        showToast(
+          'success',
+          lang === 'bg'
+            ? `PDF офертата (№ ${form.offerNo}) е подготвена за споделяне.`
+            : `PDF offer (No. ${form.offerNo}) shared.`
+        );
+      } else if (outcome === 'downloaded') {
+        showToast(
+          'success',
+          lang === 'bg'
+            ? `Браузърът не поддържа директно споделяне — PDF офертата (№ ${form.offerNo}) беше изтеглена.`
+            : `Direct file sharing unsupported here — PDF offer (No. ${form.offerNo}) downloaded instead.`
+        );
+      }
+    } catch (err) {
+      console.error('PDF share failed:', err);
+      showToast(
+        'error',
+        lang === 'bg'
+          ? 'Възникна грешка при споделяне на PDF документа.'
+          : 'An error occurred while sharing the PDF document.'
+      );
+    } finally {
+      setIsSharingPdf(false);
+    }
   };
 
   const handleDownloadPdf = async () => {
@@ -169,6 +311,7 @@ export default function HomePage() {
           <PinLoginScreen
             lang={lang}
             noticeMsg={inviteNotice}
+            cloudStatus={cloudStatus.state}
             onSetLang={setLang}
             onLoginWithPin={(pin) => {
               const res = loginWithPin(pin);
@@ -198,12 +341,15 @@ export default function HomePage() {
         totalTeamOffersCount={savedOffers.length}
         currentUser={currentUser}
         isGeneratingPdf={isGeneratingPdf}
+        isSharingPdf={isSharingPdf}
+        cloudStatus={cloudStatus.state}
         darkMode={darkMode}
         onSetLang={setLang}
         onToggleDarkMode={() => setDarkMode((d) => !d)}
         onNewOffer={handleNewOffer}
         onSaveOffer={handleSaveOffer}
         onDownloadPdf={handleDownloadPdf}
+        onSharePdf={handleSharePdf}
         onOpenPricingModal={() => setIsPricingOpen(true)}
         onOpenSavedDrawer={() => setIsSavedDrawerOpen(true)}
         onOpenAdminModal={() => setIsAdminOpen(true)}
@@ -244,9 +390,11 @@ export default function HomePage() {
             pricingConfig={pricingConfig}
             calc={calc}
             isAdmin={isAdmin}
+            isSharingPdf={isSharingPdf}
             onUpdateForm={updateForm}
             onSelectCatalogModel={selectCatalogModel}
             onOpenPricingModal={() => setIsPricingOpen(true)}
+            onSharePdf={handleSharePdf}
           />
         </div>
 
@@ -291,6 +439,8 @@ export default function HomePage() {
           users={users}
           savedOffers={savedOffers}
           currentOfferNo={form.offerNo}
+          cloudStatus={cloudStatus}
+          isEnvCloudConfigured={Boolean(getEnvFirebaseConfig())}
           onClose={() => setIsAdminOpen(false)}
           onAddOrUpdateUser={addOrUpdateUser}
           onDeleteUser={deleteUser}
@@ -322,6 +472,50 @@ export default function HomePage() {
           }}
           onExportJson={exportBackupJson}
           onImportJson={importBackupJson}
+          onConnectCloud={(rawConfigInput) => {
+            const parsed = parseFirebaseConfigInput(rawConfigInput);
+            if (!parsed) {
+              return {
+                ok: false,
+                message:
+                  lang === 'bg'
+                    ? 'Невалиден Firebase конфиг. Поставете JSON или const firebaseConfig = { apiKey, authDomain, projectId, appId }.'
+                    : 'Invalid Firebase config. Paste JSON or const firebaseConfig = { apiKey, authDomain, projectId, appId }.',
+              };
+            }
+            saveFirebaseConfig(parsed);
+            setCloudConfigTick((t) => t + 1);
+            return {
+              ok: true,
+              message:
+                lang === 'bg'
+                  ? `Свързване към Firebase проект "${parsed.projectId}"...`
+                  : `Connecting to Firebase project "${parsed.projectId}"...`,
+            };
+          }}
+          onDisconnectCloud={() => {
+            clearSavedFirebaseConfig();
+            stopCloudSync();
+            setCloudStatus({ state: 'local' });
+            setCloudConfigTick((t) => t + 1);
+          }}
+          onSyncCloudNow={async () => {
+            const cur = useOfferStore.getState();
+            await pushFullSnapshotToCloud({
+              users: cur.users,
+              savedOffers: cur.savedOffers,
+              pricingConfig: cur.pricingConfig,
+              lastOfferSeq: getOfferSequenceValue(),
+            });
+          }}
+          onCopyCloudSetupLink={async () => {
+            const cfg = getActiveFirebaseConfig();
+            if (!cfg) return;
+            const url = buildCloudSetupUrl(cfg);
+            if (navigator.clipboard?.writeText) {
+              await navigator.clipboard.writeText(url);
+            }
+          }}
         />
       )}
 

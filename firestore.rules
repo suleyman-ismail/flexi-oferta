@@ -1,0 +1,409 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model & Security Architecture
+    // ===============================================================
+    //
+    // Workspace Root: workspaces/flexi-home (all other paths denied)
+    //
+    // Authentication Context:
+    //   The client app uses Firebase Anonymous Authentication (`request.auth != null`)
+    //   combined with a workspace-shared 6-digit PIN login (`UserProfile.pin`).
+    //   Because anonymous auth tokens do not carry per-user Firebase custom claims,
+    //   these rules enforce strict authentication (`request.auth != null`), strict
+    //   schema/type/enum/size validation, and immutable field protection across the
+    //   team workspace. Role-based write restrictions (admin vs agent) and PII
+    //   isolation on `users` should be hardened via Firebase Custom Auth / Cloud
+    //   Functions before exposing to untrusted public users.
+    //
+    // 1. Collection: workspaces/flexi-home/users/{userId}
+    //    Document ID: userId (e.g., "admin-suleyman", "agent-hasan", "user-...")
+    //    Fields:
+    //      - id: string (required, immutable, must equal userId)
+    //      - name: string (required, 1..120 chars)
+    //      - pin: string (required, matches '^[0-9]{6}$')
+    //      - role: string (required, 'admin' | 'agent')
+    //      - active: bool (required)
+    //      - createdAt: string (required, immutable, 1..64 chars)
+    //      - phone: string (optional, 0..40 chars)
+    //
+    // 2. Collection: workspaces/flexi-home/offers/{offerId}
+    //    Document ID: offerId (e.g., "oferta-173...", "offer-1")
+    //    Fields:
+    //      - id: string (required, immutable, must equal offerId)
+    //      - createdAt: string (required, immutable, 0..64 chars)
+    //      - updatedAt: string (required, 0..64 chars)
+    //      - form: map (required, OfferFormState)
+    //      - summary: map (required, { structureTotal, turnkeyTotal, foundationTotal, grandTotal })
+    //      - createdByUserId: string (optional, immutable once set, 0..128 chars)
+    //      - createdByName: string (optional, immutable once set, 0..120 chars)
+    //      - createdByRole: string (optional, immutable once set, 'admin' | 'agent')
+    //      - isCustomPrice: bool (optional)
+    //
+    // 3. Document: workspaces/flexi-home/settings/pricing
+    //    Fields:
+    //      - pricingConfig: map (required, PricingConfig)
+    //      - updatedAt: string (required, 0..64 chars)
+    //
+    // 4. Document: workspaces/flexi-home/settings/counter
+    //    Fields:
+    //      - lastOfferSeq: int (required, > 0 and <= 99999999)
+    //      - updatedAt: string (required, 0..64 chars)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Common Helper Functions
+    // ===============================================================
+
+    // Check if the request is authenticated (including Firebase Anonymous Auth)
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Validate required fields exist on the incoming document
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // Validate no extraneous fields exist on the incoming document
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // Validate a map contains exact keys
+    function mapHasExactKeys(m, keys) {
+      return m is map && m.keys().hasAll(keys) && m.keys().hasOnly(keys);
+    }
+
+    // Validate a map contains required keys and no unknown keys
+    function mapHasRequiredAndOnly(m, required, allowed) {
+      return m is map && m.keys().hasAll(required) && m.keys().hasOnly(allowed);
+    }
+
+    // Validate a string is within [minLen, maxLen]
+    function isBoundedString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    // Validate an optional map string field
+    function isOptionalBoundedString(m, field, minLen, maxLen) {
+      return !(field in m) || isBoundedString(m[field], minLen, maxLen);
+    }
+
+    // Validate a finite number within [minVal, maxVal]
+    function isBoundedNumber(val, minVal, maxVal) {
+      return val is number && val >= minVal && val <= maxVal;
+    }
+
+    // Validate a strictly positive finite number <= maxVal
+    function isPositiveBoundedNumber(val, maxVal) {
+      return val is number && val > 0 && val <= maxVal;
+    }
+
+    // Validate a nullable finite number within [minVal, maxVal]
+    function isNullableBoundedNumber(val, minVal, maxVal) {
+      return val == null || isBoundedNumber(val, minVal, maxVal);
+    }
+
+    // Validate an optional strictly positive finite number <= maxVal
+    function isOptionalPositiveNumber(m, field, maxVal) {
+      return !(field in m) || isPositiveBoundedNumber(m[field], maxVal);
+    }
+
+    // Validate an optional non-negative finite number <= maxVal
+    function isOptionalBoundedNumber(m, field, minVal, maxVal) {
+      return !(field in m) || isBoundedNumber(m[field], minVal, maxVal);
+    }
+
+    // Validate an optional string enum field
+    function isOptionalEnum(m, field, allowedValues) {
+      return !(field in m) || (m[field] is string && m[field] in allowedValues);
+    }
+
+    // ===============================================================
+    // Domain Validators (Used in BOTH create and update)
+    // ===============================================================
+
+    // 1. UserProfile validator
+    function isValidUserProfile(data, userId) {
+      let allowedFields = ['id', 'name', 'pin', 'role', 'active', 'createdAt', 'phone'];
+      let requiredFields = ['id', 'name', 'pin', 'role', 'active', 'createdAt'];
+
+      return isBoundedString(userId, 1, 128)
+          && hasOnlyAllowedFields(allowedFields)
+          && hasRequiredFields(requiredFields)
+          && data.id is string
+          && data.id == userId
+          && isBoundedString(data.name, 1, 120)
+          && data.pin is string
+          && data.pin.matches('^[0-9]{6}$')
+          && data.role is string
+          && data.role in ['admin', 'agent']
+          && data.active is bool
+          && isBoundedString(data.createdAt, 1, 64)
+          && isOptionalBoundedString(data, 'phone', 0, 40);
+    }
+
+    function areImmutableUserFieldsUnchanged() {
+      return (!('id' in resource.data) || request.resource.data.id == resource.data.id)
+          && (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+    }
+
+    // 2. Offer validators (form, specOverrides, summary, SavedOffer)
+    function isValidSpecOverrideSlot(m, slotKey) {
+      return !(slotKey in m) || isBoundedString(m[slotKey], 0, 2000);
+    }
+
+    function isValidSpecOverrides(m) {
+      let allowedSlots = [
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+        '10', '11', '12', '13', '14', '15', '16', '17', '18', '19'
+      ];
+      return m is map
+          && m.size() <= 20
+          && m.keys().hasOnly(allowedSlots)
+          && isValidSpecOverrideSlot(m, '0')
+          && isValidSpecOverrideSlot(m, '1')
+          && isValidSpecOverrideSlot(m, '2')
+          && isValidSpecOverrideSlot(m, '3')
+          && isValidSpecOverrideSlot(m, '4')
+          && isValidSpecOverrideSlot(m, '5')
+          && isValidSpecOverrideSlot(m, '6')
+          && isValidSpecOverrideSlot(m, '7')
+          && isValidSpecOverrideSlot(m, '8')
+          && isValidSpecOverrideSlot(m, '9')
+          && isValidSpecOverrideSlot(m, '10')
+          && isValidSpecOverrideSlot(m, '11')
+          && isValidSpecOverrideSlot(m, '12')
+          && isValidSpecOverrideSlot(m, '13')
+          && isValidSpecOverrideSlot(m, '14')
+          && isValidSpecOverrideSlot(m, '15')
+          && isValidSpecOverrideSlot(m, '16')
+          && isValidSpecOverrideSlot(m, '17')
+          && isValidSpecOverrideSlot(m, '18')
+          && isValidSpecOverrideSlot(m, '19');
+    }
+
+    function isValidOfferForm(form) {
+      let allowedKeys = [
+        'lang', 'offerNo', 'date', 'validityDays', 'clientName', 'clientPhone',
+        'country', 'region', 'location', 'fullAddress', 'permitStatus',
+        'catalogModelId', 'modelCodeLabel', 'system', 'floors',
+        'pressTwoFloorVariant', 'areaRzp', 'includeFoundation', 'foundationArea',
+        'turnkeyPackage', 'structureRateOverride', 'foundationRateOverride',
+        'turnkeyRateOverride', 'roofColorKey', 'winColorKey', 'winProfileKey',
+        'winGlazingKey', 'facadeKey', 'wallHeightKey', 'ceilingInsulKey',
+        'extWallCm', 'intWallCm', 'systemCustomText', 'roofCustomText',
+        'winCustomText', 'facadeCustomText', 'wallHeightCustomText',
+        'ceilingCustomText', 'specOverrides', 'extraOptionLabel',
+        'extraOptionAmount', 'discountEur', 'customNotes'
+      ];
+      let requiredKeys = [
+        'offerNo', 'date', 'validityDays', 'clientName', 'location', 'system',
+        'floors', 'pressTwoFloorVariant', 'areaRzp', 'includeFoundation',
+        'foundationArea', 'turnkeyPackage', 'structureRateOverride',
+        'foundationRateOverride', 'turnkeyRateOverride', 'customNotes'
+      ];
+
+      return mapHasRequiredAndOnly(form, requiredKeys, allowedKeys)
+          && isOptionalEnum(form, 'lang', ['bg', 'en'])
+          && isBoundedString(form.offerNo, 1, 32)
+          && isBoundedString(form.date, 1, 32)
+          && form.validityDays is int
+          && form.validityDays > 0
+          && form.validityDays <= 3650
+          && isBoundedString(form.clientName, 0, 200)
+          && isOptionalBoundedString(form, 'clientPhone', 0, 40)
+          && isOptionalBoundedString(form, 'country', 0, 100)
+          && isOptionalBoundedString(form, 'region', 0, 100)
+          && isBoundedString(form.location, 0, 200)
+          && isOptionalBoundedString(form, 'fullAddress', 0, 300)
+          && isOptionalEnum(form, 'permitStatus', ['has', 'process', 'none', 'unknown'])
+          && isOptionalBoundedString(form, 'catalogModelId', 0, 64)
+          && isOptionalBoundedString(form, 'modelCodeLabel', 0, 150)
+          && form.system is string
+          && form.system in ['press_standard', 'press_economy', 'steel_frame', 'reinforced_metal']
+          && form.floors is int
+          && form.floors in [1, 2]
+          && form.pressTwoFloorVariant is string
+          && form.pressTwoFloorVariant in ['489', '515']
+          && isPositiveBoundedNumber(form.areaRzp, 100000)
+          && form.includeFoundation is bool
+          && isBoundedNumber(form.foundationArea, 0, 100000)
+          && form.turnkeyPackage is string
+          && form.turnkeyPackage in ['none', 'standard', 'luxury_680', 'custom']
+          && isNullableBoundedNumber(form.structureRateOverride, 0, 100000)
+          && isNullableBoundedNumber(form.foundationRateOverride, 0, 100000)
+          && isNullableBoundedNumber(form.turnkeyRateOverride, 0, 100000)
+          && isOptionalEnum(form, 'roofColorKey', ['black', 'red', 'green', 'white', 'unknown'])
+          && isOptionalEnum(form, 'winColorKey', ['anthracite', 'oak', 'white', 'unknown'])
+          && isOptionalEnum(form, 'winProfileKey', ['pvc_5ch', 'pvc_6ch', 'pvc_7ch', 'alu_thermal'])
+          && isOptionalEnum(form, 'winGlazingKey', ['double', 'triple', 'double_frosted'])
+          && isOptionalEnum(form, 'facadeKey', [
+            'panel_smooth', 'panel_smooth_unpainted', 'wood_siding',
+            'wood_decor', 'white_plaster', 'insul_10cm', 'etalbond'
+          ])
+          && isOptionalEnum(form, 'wallHeightKey', ['250', '280', '300', 'custom'])
+          && isOptionalEnum(form, 'ceilingInsulKey', ['80', '160'])
+          && isOptionalPositiveNumber(form, 'extWallCm', 500)
+          && isOptionalPositiveNumber(form, 'intWallCm', 500)
+          && isOptionalBoundedString(form, 'systemCustomText', 0, 500)
+          && isOptionalBoundedString(form, 'roofCustomText', 0, 500)
+          && isOptionalBoundedString(form, 'winCustomText', 0, 500)
+          && isOptionalBoundedString(form, 'facadeCustomText', 0, 500)
+          && isOptionalBoundedString(form, 'wallHeightCustomText', 0, 200)
+          && isOptionalBoundedString(form, 'ceilingCustomText', 0, 500)
+          && (!('specOverrides' in form) || isValidSpecOverrides(form.specOverrides))
+          && isOptionalBoundedString(form, 'extraOptionLabel', 0, 300)
+          && isOptionalBoundedNumber(form, 'extraOptionAmount', 0, 10000000)
+          && isOptionalBoundedNumber(form, 'discountEur', 0, 10000000)
+          && isBoundedString(form.customNotes, 0, 4000);
+    }
+
+    function isValidOfferSummary(summary) {
+      let keys = ['structureTotal', 'turnkeyTotal', 'foundationTotal', 'grandTotal'];
+      return mapHasExactKeys(summary, keys)
+          && isBoundedNumber(summary.structureTotal, 0, 100000000)
+          && isBoundedNumber(summary.turnkeyTotal, 0, 100000000)
+          && isBoundedNumber(summary.foundationTotal, 0, 100000000)
+          && isBoundedNumber(summary.grandTotal, 0, 100000000);
+    }
+
+    function isValidOffer(data, offerId) {
+      let allowedFields = [
+        'id', 'createdAt', 'updatedAt', 'form', 'summary',
+        'createdByUserId', 'createdByName', 'createdByRole', 'isCustomPrice'
+      ];
+      let requiredFields = ['id', 'createdAt', 'updatedAt', 'form', 'summary'];
+
+      return isBoundedString(offerId, 1, 128)
+          && hasOnlyAllowedFields(allowedFields)
+          && hasRequiredFields(requiredFields)
+          && data.id is string
+          && data.id == offerId
+          && isBoundedString(data.createdAt, 0, 64)
+          && isBoundedString(data.updatedAt, 0, 64)
+          && isOptionalBoundedString(data, 'createdByUserId', 0, 128)
+          && isOptionalBoundedString(data, 'createdByName', 0, 120)
+          && isOptionalEnum(data, 'createdByRole', ['admin', 'agent'])
+          && (!('isCustomPrice' in data) || data.isCustomPrice is bool)
+          && isValidOfferForm(data.form)
+          && isValidOfferSummary(data.summary);
+    }
+
+    function areImmutableOfferFieldsUnchanged() {
+      return (!('id' in resource.data) || request.resource.data.id == resource.data.id)
+          && (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt)
+          && (!('createdByUserId' in resource.data) || (('createdByUserId' in request.resource.data) && request.resource.data.createdByUserId == resource.data.createdByUserId))
+          && (!('createdByName' in resource.data) || (('createdByName' in request.resource.data) && request.resource.data.createdByName == resource.data.createdByName))
+          && (!('createdByRole' in resource.data) || (('createdByRole' in request.resource.data) && request.resource.data.createdByRole == resource.data.createdByRole));
+    }
+
+    // 3. PricingConfig validator
+    function isValidTieredRates(tiers) {
+      let keys = ['upTo50', 'from51To70', 'from71To90', 'from91To120', 'over120'];
+      return mapHasExactKeys(tiers, keys)
+          && isBoundedNumber(tiers.upTo50, 0, 100000)
+          && isBoundedNumber(tiers.from51To70, 0, 100000)
+          && isBoundedNumber(tiers.from71To90, 0, 100000)
+          && isBoundedNumber(tiers.from91To120, 0, 100000)
+          && isBoundedNumber(tiers.over120, 0, 100000);
+    }
+
+    function isValidPricingConfig(cfg) {
+      let topKeys = [
+        'press_standard', 'press_economy', 'steel_frame',
+        'reinforced_metal', 'foundationRate', 'turnkeyRates'
+      ];
+      return mapHasExactKeys(cfg, topKeys)
+          && mapHasExactKeys(cfg.press_standard, ['floor1', 'floor2Default', 'floor2Alt'])
+          && isValidTieredRates(cfg.press_standard.floor1)
+          && isBoundedNumber(cfg.press_standard.floor2Default, 0, 100000)
+          && isBoundedNumber(cfg.press_standard.floor2Alt, 0, 100000)
+          && mapHasExactKeys(cfg.press_economy, ['flatRate'])
+          && isBoundedNumber(cfg.press_economy.flatRate, 0, 100000)
+          && mapHasExactKeys(cfg.steel_frame, ['floor1', 'floor2'])
+          && isValidTieredRates(cfg.steel_frame.floor1)
+          && isBoundedNumber(cfg.steel_frame.floor2, 0, 100000)
+          && mapHasExactKeys(cfg.reinforced_metal, ['floor1', 'floor2'])
+          && isValidTieredRates(cfg.reinforced_metal.floor1)
+          && isBoundedNumber(cfg.reinforced_metal.floor2, 0, 100000)
+          && isBoundedNumber(cfg.foundationRate, 0, 100000)
+          && mapHasExactKeys(cfg.turnkeyRates, ['standard', 'luxury_680'])
+          && isBoundedNumber(cfg.turnkeyRates.standard, 0, 100000)
+          && isBoundedNumber(cfg.turnkeyRates.luxury_680, 0, 100000);
+    }
+
+    function isValidPricingSettings(data) {
+      let keys = ['pricingConfig', 'updatedAt'];
+      return hasOnlyAllowedFields(keys)
+          && hasRequiredFields(keys)
+          && isValidPricingConfig(data.pricingConfig)
+          && isBoundedString(data.updatedAt, 0, 64);
+    }
+
+    // 4. Counter validator
+    function isValidCounterSettings(data) {
+      let keys = ['lastOfferSeq', 'updatedAt'];
+      return hasOnlyAllowedFields(keys)
+          && hasRequiredFields(keys)
+          && data.lastOfferSeq is int
+          && data.lastOfferSeq > 0
+          && data.lastOfferSeq <= 99999999
+          && isBoundedString(data.updatedAt, 0, 64);
+    }
+
+    // ===============================================================
+    // Workspace Collection & Document Rules
+    // ===============================================================
+
+    match /workspaces/flexi-home/users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+                    && isValidUserProfile(request.resource.data, userId);
+      allow update: if isAuthenticated()
+                    && isValidUserProfile(request.resource.data, userId)
+                    && areImmutableUserFieldsUnchanged();
+      allow delete: if isAuthenticated();
+    }
+
+    match /workspaces/flexi-home/offers/{offerId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+                    && isValidOffer(request.resource.data, offerId);
+      allow update: if isAuthenticated()
+                    && isValidOffer(request.resource.data, offerId)
+                    && areImmutableOfferFieldsUnchanged();
+      allow delete: if isAuthenticated();
+    }
+
+    match /workspaces/flexi-home/settings/pricing {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+                    && isValidPricingSettings(request.resource.data);
+      allow update: if isAuthenticated()
+                    && isValidPricingSettings(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /workspaces/flexi-home/settings/counter {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+                    && isValidCounterSettings(request.resource.data);
+      allow update: if isAuthenticated()
+                    && isValidCounterSettings(request.resource.data);
+      allow delete: if false;
+    }
+
+    // ===============================================================
+    // Default Deny All Other Paths
+    // ===============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

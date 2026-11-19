@@ -2,6 +2,8 @@
 
 import React from 'react';
 import {
+  Cloud,
+  CloudOff,
   Crown,
   FileDown,
   FilePlus2,
@@ -10,6 +12,7 @@ import {
   Moon,
   Save,
   Settings2,
+  Share2,
   Sun,
   UserCheck,
 } from 'lucide-react';
@@ -23,12 +26,15 @@ interface StudioHeaderProps {
   totalTeamOffersCount?: number;
   currentUser?: UserProfile | null;
   isGeneratingPdf: boolean;
+  isSharingPdf?: boolean;
+  cloudStatus?: 'local' | 'connecting' | 'synced' | 'error';
   darkMode: boolean;
   onSetLang: (lang: AppLang) => void;
   onToggleDarkMode: () => void;
   onNewOffer: () => void;
   onSaveOffer: () => void;
   onDownloadPdf: () => void;
+  onSharePdf?: () => void;
   onOpenSavedDrawer: () => void;
   onOpenPricingModal: () => void;
   onOpenAdminModal?: () => void;
@@ -42,12 +48,15 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
   totalTeamOffersCount,
   currentUser,
   isGeneratingPdf,
+  isSharingPdf = false,
+  cloudStatus,
   darkMode,
   onSetLang,
   onToggleDarkMode,
   onNewOffer,
   onSaveOffer,
   onDownloadPdf,
+  onSharePdf,
   onOpenSavedDrawer,
   onOpenPricingModal,
   onOpenAdminModal,
@@ -92,6 +101,36 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
                     <UserCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                   )}
                   <span>{currentUser.name}</span>
+                </span>
+              )}
+              {cloudStatus && cloudStatus !== 'local' && (
+                <span
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full border ${
+                    cloudStatus === 'synced'
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/80 dark:text-emerald-300 dark:border-emerald-800'
+                      : cloudStatus === 'connecting'
+                      ? 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/80 dark:text-amber-300 dark:border-amber-800 animate-pulse'
+                      : 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/80 dark:text-rose-300 dark:border-rose-800'
+                  }`}
+                >
+                  {cloudStatus === 'error' ? (
+                    <CloudOff className="w-3 h-3 shrink-0" />
+                  ) : (
+                    <Cloud className="w-3 h-3 shrink-0" />
+                  )}
+                  <span>
+                    {cloudStatus === 'synced'
+                      ? lang === 'bg'
+                        ? 'Облак'
+                        : 'Cloud'
+                      : cloudStatus === 'connecting'
+                      ? lang === 'bg'
+                        ? 'Синхронизация...'
+                        : 'Syncing...'
+                      : lang === 'bg'
+                      ? 'Офлайн / Грешка'
+                      : 'Sync Error'}
+                  </span>
                 </span>
               )}
             </div>
@@ -211,13 +250,26 @@ export const StudioHeader: React.FC<StudioHeaderProps> = ({
           <button
             type="button"
             onClick={onDownloadPdf}
-            disabled={isGeneratingPdf}
+            disabled={isGeneratingPdf || isSharingPdf}
             aria-label={T.btnDownloadPdf}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 shadow-sm shadow-indigo-600/20 transition"
           >
             <FileDown className="w-4 h-4" />
             <span>{isGeneratingPdf ? T.btnGeneratingPdf : T.btnDownloadPdf}</span>
           </button>
+
+          {onSharePdf && (
+            <button
+              type="button"
+              onClick={onSharePdf}
+              disabled={isGeneratingPdf || isSharingPdf}
+              aria-label={T.btnSharePdf}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 shadow-sm shadow-emerald-600/20 transition cursor-pointer"
+            >
+              <Share2 className="w-4 h-4" />
+              <span>{isSharingPdf ? T.btnSharingPdf : T.btnSharePdf}</span>
+            </button>
+          )}
 
           <button
             type="button"

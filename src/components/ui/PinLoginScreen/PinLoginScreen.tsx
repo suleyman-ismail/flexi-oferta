@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Delete, ShieldCheck, Lock } from 'lucide-react';
+import { Delete, ShieldCheck, Lock, Cloud, CloudOff } from 'lucide-react';
 import { AppLang, UserProfile } from '@/types/offer';
 
 export interface PinLoginScreenProps {
   lang: AppLang;
   noticeMsg?: string;
+  cloudStatus?: 'local' | 'connecting' | 'synced' | 'error';
   onSetLang: (lang: AppLang) => void;
   onLoginWithPin: (pin: string) => {
     ok: boolean;
@@ -19,6 +20,7 @@ export interface PinLoginScreenProps {
 export const PinLoginScreen: React.FC<PinLoginScreenProps> = ({
   lang,
   noticeMsg,
+  cloudStatus,
   onSetLang,
   onLoginWithPin,
 }) => {
@@ -146,12 +148,43 @@ export const PinLoginScreen: React.FC<PinLoginScreenProps> = ({
         <h1 className="text-2xl font-extrabold tracking-tight text-center">
           Flexi Home ОФЕРТА
         </h1>
-        <p className="text-xs text-indigo-200 mt-1 mb-6 flex items-center gap-1.5">
+        <p className="text-xs text-indigo-200 mt-1 mb-4 flex items-center gap-1.5">
           <Lock className="w-3.5 h-3.5 text-indigo-400" />
           {lang === 'bg'
             ? 'Въведете своя личен 6-цифрен PIN код'
             : 'Enter your personal 6-digit PIN code'}
         </p>
+
+        {cloudStatus && cloudStatus !== 'local' && (
+          <div
+            className={`mb-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border ${
+              cloudStatus === 'synced'
+                ? 'bg-emerald-500/15 border-emerald-400/35 text-emerald-200'
+                : cloudStatus === 'connecting'
+                ? 'bg-amber-500/15 border-amber-400/35 text-amber-200'
+                : 'bg-rose-500/15 border-rose-400/35 text-rose-200'
+            }`}
+          >
+            {cloudStatus === 'error' ? (
+              <CloudOff className="w-3.5 h-3.5 shrink-0" />
+            ) : (
+              <Cloud className="w-3.5 h-3.5 shrink-0" />
+            )}
+            <span>
+              {cloudStatus === 'synced'
+                ? lang === 'bg'
+                  ? 'Облачна синхронизация активна'
+                  : 'Cloud sync active'
+                : cloudStatus === 'connecting'
+                ? lang === 'bg'
+                  ? 'Синхронизиране на профилите...'
+                  : 'Syncing profiles...'
+                : lang === 'bg'
+                ? 'Грешка при облачна връзка'
+                : 'Cloud sync error'}
+            </span>
+          </div>
+        )}
 
         {noticeMsg && (
           <div className="mb-4 px-3.5 py-2 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-100 text-xs font-semibold text-center max-w-xs">

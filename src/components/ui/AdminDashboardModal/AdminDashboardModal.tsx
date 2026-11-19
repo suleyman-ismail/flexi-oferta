@@ -21,6 +21,9 @@ import {
   Download,
   Upload,
   Link2,
+  Cloud,
+  CloudOff,
+  RefreshCw,
 } from 'lucide-react';
 import { AppLang, SavedOffer, UserProfile, UserRole } from '@/types/offer';
 import { SYSTEM_META, TURNKEY_META } from '@/lib/constants';
@@ -31,6 +34,7 @@ import {
 } from '@/lib/pricingEngine';
 import { formatBgDate } from '@/lib/pdfGenerator';
 import { buildProfileInviteUrl } from '@/lib/profileInvite';
+import { CloudSyncStatus, pushCounterToCloud } from '@/lib/cloudSync';
 
 export interface AdminDashboardModalProps {
   lang: AppLang;
@@ -38,6 +42,8 @@ export interface AdminDashboardModalProps {
   users: UserProfile[];
   savedOffers: SavedOffer[];
   currentOfferNo: string;
+  cloudStatus?: CloudSyncStatus;
+  isEnvCloudConfigured?: boolean;
   onClose: () => void;
   onAddOrUpdateUser: (
     user: Omit<UserProfile, 'id' | 'createdAt'> & { id?: string }
@@ -49,6 +55,10 @@ export interface AdminDashboardModalProps {
   onSyncCurrentOfferNo: (nextOfferNo: string) => void;
   onExportJson: () => string;
   onImportJson: (raw: string) => { ok: boolean; message: string };
+  onConnectCloud?: (rawConfigInput: string) => { ok: boolean; message: string };
+  onDisconnectCloud?: () => void;
+  onSyncCloudNow?: () => Promise<void>;
+  onCopyCloudSetupLink?: () => Promise<void>;
 }
 
 export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
@@ -56,6 +66,8 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
   isOpen,
   users,
   savedOffers,
+  cloudStatus,
+  isEnvCloudConfigured = false,
   onClose,
   onAddOrUpdateUser,
   onDeleteUser,
@@ -65,7 +77,12 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
   onSyncCurrentOfferNo,
   onExportJson,
   onImportJson,
+  onConnectCloud,
+  onDisconnectCloud,
+  onSyncCloudNow,
+  onCopyCloudSetupLink,
 }) => {
+  const [cloudInput, setCloudInput] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'offers' | 'users' | 'numbering'>(
     'offers'
   );
@@ -198,6 +215,7 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
     e.preventDefault();
     const formatted = setOfferSequenceValue(seqInput);
     onSyncCurrentOfferNo(formatted);
+    void pushCounterToCloud(seqInput);
     setFeedback({
       type: 'success',
       message:
@@ -338,8 +356,8 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
             <Hash className="w-4 h-4" />
             <span>
               {lang === 'bg'
-                ? 'Номерация на оферти & Архив'
-                : 'Sequential Numbering & Backup'}
+                ? 'Номерация, Архив и Облак'
+                : 'Numbering, Backup & Cloud'}
             </span>
           </button>
         </div>
@@ -918,6 +936,165 @@ export const AdminDashboardModal: React.FC<AdminDashboardModalProps> = ({
                     className="hidden"
                   />
                 </div>
+              </div>
+
+              {/* Cloud Sync Panel (Firebase Firestore) */}
+              <div className="md:col-span-2 p-5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-950/50 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h3 className="text-sm font-extrabold text-indigo-700 dark:text-indigo-400 flex items-center gap-2">
+                    {cloudStatus?.state === 'error' ? (
+                      <CloudOff className="w-4 h-4 text-rose-600" />
+                    ) : (
+                      <Cloud className="w-4 h-4 text-emerald-600" />
+                    )}
+                    <span>
+                      {lang === 'bg'
+                        ? 'Централна облачна синхронизация (Firebase Firestore)'
+                        : 'Central Cloud Synchronization (Firebase Firestore)'}
+                    </span>
+                  </h3>
+
+                  <span
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${
+                      cloudStatus?.state === 'synced'
+                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                        : cloudStatus?.state === 'connecting'
+                        ? 'bg-amber-100 text-amber-800 border-amber-300'
+                        : cloudStatus?.state === 'error'
+                        ? 'bg-rose-100 text-rose-800 border-rose-300'
+                        : 'bg-zinc-200 text-zinc-700 border-zinc-300'
+                    }`}
+                  >
+                    {cloudStatus?.state === 'synced'
+                      ? lang === 'bg'
+                        ? `Свързан с облака (${cloudStatus.projectId || ''})`
+                        : `Connected (${cloudStatus.projectId || ''})`
+                      : cloudStatus?.state === 'connecting'
+                      ? lang === 'bg'
+                        ? 'Свързване...'
+                        : 'Connecting...'
+                      : cloudStatus?.state === 'error'
+                      ? lang === 'bg'
+                        ? `Грешка: ${cloudStatus.error || 'Firestore'}`
+                        : `Error: ${cloudStatus.error || 'Firestore'}`
+                      : lang === 'bg'
+                      ? 'Локален режим (само на това устройство)'
+                      : 'Local mode (this device only)'}
+                  </span>
+                </div>
+
+                <p className="text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                  {lang === 'bg'
+                    ? 'Когато свържете Firebase Firestore, всички PIN профили, оферти, ценови тарифи и поредният номер се синхронизират автоматично в реално време между всички телефони и компютри на екипа.'
+                    : 'When connected to Firebase Firestore, all user PINs, saved offers, tariffs, and sequential numbering sync automatically in real time across all team phones and computers.'}
+                  {cloudStatus?.lastSyncedAt && (
+                    <span className="block mt-1 font-mono text-[11px] text-emerald-700 dark:text-emerald-400">
+                      {lang === 'bg' ? 'Последна синхронизация: ' : 'Last synced: '}
+                      {new Date(cloudStatus.lastSyncedAt).toLocaleTimeString()}
+                    </span>
+                  )}
+                </p>
+
+                {cloudStatus?.state === 'synced' || cloudStatus?.state === 'connecting' ? (
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    {onSyncCloudNow && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await onSyncCloudNow();
+                          setFeedback({
+                            type: 'success',
+                            message:
+                              lang === 'bg'
+                                ? 'Всички профили, оферти и тарифи са изпратени към облака.'
+                                : 'All profiles, offers and rates synced to cloud.',
+                          });
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition cursor-pointer"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        {lang === 'bg' ? 'Синхронизирай сега' : 'Sync Now'}
+                      </button>
+                    )}
+
+                    {onCopyCloudSetupLink && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await onCopyCloudSetupLink();
+                          setFeedback({
+                            type: 'success',
+                            message:
+                              lang === 'bg'
+                                ? 'Линкът за облачна настройка е копиран! Отворете го веднъж на телефон на екипа и той ще се свърже автоматично.'
+                                : 'Cloud setup link copied! Open once on a teammate phone to auto-connect.',
+                          });
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700 text-white transition cursor-pointer"
+                      >
+                        <Link2 className="w-3.5 h-3.5" />
+                        {lang === 'bg'
+                          ? 'Копирай линк за облачна връзка'
+                          : 'Copy Cloud Setup Link'}
+                      </button>
+                    )}
+
+                    {!isEnvCloudConfigured && onDisconnectCloud && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          onDisconnectCloud();
+                          setFeedback({
+                            type: 'success',
+                            message:
+                              lang === 'bg'
+                                ? 'Облачната връзка е прекъсната (активен е локален режим).'
+                                : 'Cloud sync disconnected (local mode active).',
+                          });
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition cursor-pointer"
+                      >
+                        {lang === 'bg' ? 'Прекъсни връзката' : 'Disconnect Cloud'}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  onConnectCloud &&
+                  !isEnvCloudConfigured && (
+                    <div className="space-y-2.5">
+                      <label className="block font-bold">
+                        {lang === 'bg'
+                          ? 'Поставете Firebase Web Config (JSON или const firebaseConfig = { ... })'
+                          : 'Paste Firebase Web Config (JSON or const firebaseConfig = { ... })'}
+                      </label>
+                      <textarea
+                        rows={4}
+                        value={cloudInput}
+                        onChange={(e) => setCloudInput(e.target.value)}
+                        aria-label="Firebase Config Input"
+                        placeholder={`const firebaseConfig = {\n  apiKey: "...",\n  authDomain: "...",\n  projectId: "...",\n  appId: "..."\n};`}
+                        className="w-full p-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 font-mono text-[11px]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const res = onConnectCloud(cloudInput);
+                          setFeedback({
+                            type: res.ok ? 'success' : 'error',
+                            message: res.message,
+                          });
+                          if (res.ok) setCloudInput('');
+                        }}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl font-extrabold bg-indigo-600 hover:bg-indigo-700 text-white shadow transition cursor-pointer"
+                      >
+                        <Cloud className="w-4 h-4" />
+                        {lang === 'bg'
+                          ? 'Свържи с Firebase'
+                          : 'Connect to Firebase'}
+                      </button>
+                    </div>
+                  )
+                )}
               </div>
             </div>
           )}

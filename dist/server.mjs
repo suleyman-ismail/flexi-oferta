@@ -1124,6 +1124,38 @@ function generateOfferNumber(increment = true) {
   return `${yy}-${String(seq).padStart(4, "0")}`;
 }
 
+// src/lib/shareLinks.ts
+function buildOfferShareMessage(form, calc) {
+  const isEn = form.lang === "en";
+  const totalDisplay = calc.hasTurnkey || form.includeFoundation ? formatEur(calc.grandTotalWithTurnkey) : formatEur(calc.contractStructureNet);
+  if (isEn) {
+    const lines2 = [
+      `Flexi Home | Offer \u2116 ${form.offerNo}`,
+      form.clientName ? `Client: ${form.clientName}` : null,
+      `Model: ${form.modelCodeLabel} (${form.areaRzp} m\xB2, ${calc.resolvedLabels.floorsLabel})`,
+      `System: ${calc.resolvedLabels.systemName}`,
+      `Base Structure: ${formatEur(calc.contractStructureNet)}`,
+      calc.hasTurnkey ? `Turnkey (${calc.turnkeyName}): +${formatEur(calc.turnkeyTotal)}` : null,
+      form.includeFoundation ? `Foundation (${calc.effectiveFoundationArea} m\xB2): +${formatEur(calc.foundationTotal)}` : null,
+      `Total: ${totalDisplay}`,
+      `flexi-home.eu`
+    ];
+    return lines2.filter(Boolean).join("\n");
+  }
+  const lines = [
+    `Flexi Home | \u041E\u0444\u0435\u0440\u0442\u0430 \u2116 ${form.offerNo}`,
+    form.clientName ? `\u041A\u043B\u0438\u0435\u043D\u0442: ${form.clientName}` : null,
+    `\u041C\u043E\u0434\u0435\u043B: ${form.modelCodeLabel} (${form.areaRzp} \u043C\xB2, ${calc.resolvedLabels.floorsLabel})`,
+    `\u0421\u0438\u0441\u0442\u0435\u043C\u0430: ${calc.resolvedLabels.systemName}`,
+    `\u0413\u0440\u0443\u0431\u0430 \u043A\u043E\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0438\u044F (\u201E\u0434\u043E \u0442\u0430\u043F\u0430\u201C): ${formatEur(calc.contractStructureNet)}`,
+    calc.hasTurnkey ? `\u041F\u0430\u043A\u0435\u0442 ${calc.turnkeyName}: +${formatEur(calc.turnkeyTotal)}` : null,
+    form.includeFoundation ? `\u0424\u0443\u043D\u0434\u0430\u043C\u0435\u043D\u0442 (${calc.effectiveFoundationArea} \u043C\xB2): +${formatEur(calc.foundationTotal)}` : null,
+    `\u041E\u0431\u0449\u0430 \u0441\u0442\u043E\u0439\u043D\u043E\u0441\u0442: ${totalDisplay}`,
+    `flexi-home.eu`
+  ];
+  return lines.filter(Boolean).join("\n");
+}
+
 // src/lib/pdfGenerator.ts
 function formatOfferFilename(form) {
   const rawName = (form.clientName || (form.lang === "en" ? "Client" : "Klient")).trim();
@@ -2255,38 +2287,6 @@ function buildBulgarianOfferDocDefinition(form, calc, logoDataUrl = null) {
     ]
   };
   return docDefinition;
-}
-
-// src/lib/shareLinks.ts
-function buildOfferShareMessage(form, calc) {
-  const isEn = form.lang === "en";
-  const totalDisplay = calc.hasTurnkey || form.includeFoundation ? formatEur(calc.grandTotalWithTurnkey) : formatEur(calc.contractStructureNet);
-  if (isEn) {
-    const lines2 = [
-      `Flexi Home | Offer \u2116 ${form.offerNo}`,
-      form.clientName ? `Client: ${form.clientName}` : null,
-      `Model: ${form.modelCodeLabel} (${form.areaRzp} m\xB2, ${calc.resolvedLabels.floorsLabel})`,
-      `System: ${calc.resolvedLabels.systemName}`,
-      `Base Structure: ${formatEur(calc.contractStructureNet)}`,
-      calc.hasTurnkey ? `Turnkey (${calc.turnkeyName}): +${formatEur(calc.turnkeyTotal)}` : null,
-      form.includeFoundation ? `Foundation (${calc.effectiveFoundationArea} m\xB2): +${formatEur(calc.foundationTotal)}` : null,
-      `Total: ${totalDisplay}`,
-      `flexi-home.eu`
-    ];
-    return lines2.filter(Boolean).join("\n");
-  }
-  const lines = [
-    `Flexi Home | \u041E\u0444\u0435\u0440\u0442\u0430 \u2116 ${form.offerNo}`,
-    form.clientName ? `\u041A\u043B\u0438\u0435\u043D\u0442: ${form.clientName}` : null,
-    `\u041C\u043E\u0434\u0435\u043B: ${form.modelCodeLabel} (${form.areaRzp} \u043C\xB2, ${calc.resolvedLabels.floorsLabel})`,
-    `\u0421\u0438\u0441\u0442\u0435\u043C\u0430: ${calc.resolvedLabels.systemName}`,
-    `\u0413\u0440\u0443\u0431\u0430 \u043A\u043E\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0438\u044F (\u201E\u0434\u043E \u0442\u0430\u043F\u0430\u201C): ${formatEur(calc.contractStructureNet)}`,
-    calc.hasTurnkey ? `\u041F\u0430\u043A\u0435\u0442 ${calc.turnkeyName}: +${formatEur(calc.turnkeyTotal)}` : null,
-    form.includeFoundation ? `\u0424\u0443\u043D\u0434\u0430\u043C\u0435\u043D\u0442 (${calc.effectiveFoundationArea} \u043C\xB2): +${formatEur(calc.foundationTotal)}` : null,
-    `\u041E\u0431\u0449\u0430 \u0441\u0442\u043E\u0439\u043D\u043E\u0441\u0442: ${totalDisplay}`,
-    `flexi-home.eu`
-  ];
-  return lines.filter(Boolean).join("\n");
 }
 
 // src/cli/offerService.ts

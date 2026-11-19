@@ -18,6 +18,7 @@ import {
   RotateCcw,
   Ruler,
   Send,
+  Share2,
   Sparkles,
   User,
 } from 'lucide-react';
@@ -70,9 +71,11 @@ interface OfferFormPanelProps {
   pricingConfig: PricingConfig;
   calc: CalculatedOffer;
   isAdmin?: boolean;
+  isSharingPdf?: boolean;
   onUpdateForm: (patch: Partial<OfferFormState>) => void;
   onSelectCatalogModel: (modelId: string) => void;
   onOpenPricingModal: () => void;
+  onSharePdf?: () => void;
 }
 
 export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
@@ -80,9 +83,11 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
   pricingConfig,
   calc,
   isAdmin = true,
+  isSharingPdf = false,
   onUpdateForm,
   onSelectCatalogModel,
   onOpenPricingModal,
+  onSharePdf,
 }) => {
   const lang = form.lang || 'bg';
   const T = UI_TEXT[lang];
@@ -193,6 +198,22 @@ export const OfferFormPanel: React.FC<OfferFormPanelProps> = ({
                     <Send className="w-3 h-3" />
                     Viber
                   </a>
+                  {onSharePdf && (
+                    <button
+                      type="button"
+                      onClick={onSharePdf}
+                      disabled={isSharingPdf}
+                      aria-label={
+                        lang === 'bg'
+                          ? 'Сподели PDF директно'
+                          : 'Share PDF directly'
+                      }
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white transition-colors shadow-sm cursor-pointer"
+                    >
+                      <Share2 className="w-3 h-3" />
+                      {lang === 'bg' ? 'Сподели PDF' : 'Share PDF'}
+                    </button>
+                  )}
                   {normalized ? (
                     <span className="text-[10px] font-mono text-zinc-500 dark:text-zinc-400">
                       +{normalized}
